@@ -57,7 +57,7 @@ public:
     static std::unique_ptr<DataWriter> create_stderr();
     static std::unique_ptr<DataWriter> create_udp(const std::string& host, int port);
     static std::unique_ptr<DataWriter> create_tcp(const std::string& host, int port);
-    static std::unique_ptr<DataWriter> create_zmq(const std::string& endpoint, bool bind = false);
+    static std::unique_ptr<DataWriter> create_zmq(const std::string& endpoint, bool bind = false, const std::string& tag = "");
 
 private:
     std::expected<std::vector<std::byte>, Error> compress_data(std::span<const std::byte> data);
