@@ -29,17 +29,14 @@ GIT_REPOSITORY https://github.com/fmtlib/fmt.git
 GIT_SHALLOW TRUE
 GIT_TAG 11.2.0
 )
-FetchContent_MakeAvailable(fmt)
 
 find_package(PkgConfig REQUIRED)
-find_package(fmt REQUIRED)
-find_package(docopt REQUIRED)
 pkg_check_modules(LIBNL REQUIRED libnl-3.0 libnl-genl-3.0)
 
 # Targets
 add_executable(wireless-stats src/main.cpp
+                              src/output.cpp
                               src/station.cpp
-                              src/compress.cpp
                               src/ppp.cpp
                               src/survey.cpp)
 
@@ -50,7 +47,7 @@ target_include_directories(wireless-stats PRIVATE
 target_link_libraries(wireless-stats PRIVATE
                                              nl-3
                                              nl-genl-3
-                                             fmt::fmt
+                                             zmq
                                              ${ZLIB_LIBRARIES}
                                              ${LIBNL_LIBRARIES}
                                              #simdjson::simdjson

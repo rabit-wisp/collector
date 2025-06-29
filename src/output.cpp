@@ -183,11 +183,12 @@ private:
     void* context_;
     void* socket_;
     std::string endpoint_;
+    std::string tag_; // whether or not to include hostname as multi-part tag
     bool bind_mode_;
 
 public:
-    ZmqTransport(const std::string& endpoint, bool bind_mode)
-        : context_(nullptr), socket_(nullptr), endpoint_(endpoint), bind_mode_(bind_mode) {}
+    ZmqTransport(const std::string& endpoint, bool bind_mode, const std::string& tag)
+        : context_(nullptr), socket_(nullptr), endpoint_(endpoint), bind_mode_(bind_mode), tag_(tag) {}
 
     ~ZmqTransport() {
         disconnect();
@@ -241,8 +242,11 @@ public:
             if (!result) return result;
         }
 
-        int result = zmq_send(socket_, data.data(), data.size(), 0);
-        if (result < 0) {
+        if (!tag_.empty() && zmq_send(socket_, tag_.c_str(), tag_.size(), ZMQ_SNDMORE) < 0) {
+            return std::unexpected(Error::SendFailed);
+        }
+
+        if (zmq_send(socket_, data.data(), data.size(), 0) < 0) {
             return std::unexpected(Error::SendFailed);
         }
 
@@ -326,8 +330,8 @@ std::unique_ptr<DataWriter> DataWriter::create_tcp(const std::string& host, int 
     return std::make_unique<DataWriter>(std::move(transport));
 }
 
-std::unique_ptr<DataWriter> DataWriter::create_zmq(const std::string& endpoint, bool bind) {
-    auto transport = std::make_unique<ZmqTransport>(endpoint, bind);
+std::unique_ptr<DataWriter> DataWriter::create_zmq(const std::string& endpoint, bool bind, const std::string& tag) {
+    auto transport = std::make_unique<ZmqTransport>(endpoint, bind, tag);
     return std::make_unique<DataWriter>(std::move(transport));
 }
 

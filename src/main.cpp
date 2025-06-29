@@ -14,93 +14,109 @@
 #include <iostream>
 #include <iomanip>
 
-
 #include <docopt.h>
+
+#include "output.h"
 #include "station.h"
-#include "compress.h"
 #include "survey.h"
 #include "ppp.h"
 
 
 static const char USAGE[] =  R"(wireless-stats
 Usage:
-  wireless-stats <interface> --dest-ip=<ip> --dest-port=<port> [--interval=<sec>] [--no-compress] [--count=<count>]
-  wireless-stats <interface> --stdout [--interval=<sec>] [--count=<count>]
+  wireless-stats <interface> --tcp --dest-ip=<ip> --dest-port=<port> [options]
+  wireless-stats <interface> --udp --dest-ip=<ip> --dest-port=<port> [options]
+  wireless-stats <interface> --zmq --endpoint=<endpoint> [--mode=(connect|bind)] [--hostname-tag] [options]
+  wireless-stats <interface> --stdout [options]
+  wireless-stats <interface> --stderr [options]
 
 Options:
-  --dest-ip=<ip>      Destination IPv4 address.
-  --dest-port=<port>  Destination UDP port.
-  --interval=<sec>    milliseconds between samples [default: 1000].
-  --no-compress       don't gzip content
-  --count=<count>     only do count number of polls [default: 0]
-  --stdout            output stats directly to stdout
+  --stdout               output to stdout
+  --stderr               output to stdout
+  --udp                  send over udp
+  --tcp                  send over tcp
+  --zmq                  send over zmq
+  --dest-ip=<ip>         Destination IPv4 address.
+  --dest-port=<port>     Destination UDP port.
+  --endpoint=<endpoint>  zmq endpoint (e.g. tcp://*:8000)
+  --mode=<mode>          zmq connection mode [default: connect]
+  --interval=<sec>       milliseconds between samples [default: 1000].
+  --count=<count>        only do count number of polls [default: 0]
+  --no-compress          don't gzip content
 )";
 
 
 int main(int argc, const char* argv[]) {
+
     const auto args = docopt::docopt(USAGE, {argv + 1, argv + argc}, true, "wireless-stats 0.1");
     std::string ifname = args.at("<interface>").asString();
     int interval       = std::stoi(args.at("--interval").asString());
     int count          = std::stoi(args.at("--count").asString());
-    bool stdout = args.at("--stdout").asBool();
-    bool compress = !stdout && !args.at("--no-compress").asBool();
-
-    std::string dest_ip  = args.at("--dest-ip").isString()? args.at("--dest-ip").asString() : "";
-    int dest_port        = args.at("--dest-port").isString()? std::stoi(args.at("--dest-port").asString()) : 0;
+    bool compress      = !args.at("--no-compress").asBool();
 
     char buf[256]{};
     std::string hostname = ::gethostname(buf, sizeof(buf)) == 0 ? std::string(buf) : std::string{};
 
-    int sock = socket(AF_INET, SOCK_DGRAM, 0);
-    sockaddr_in dst{};
-    dst.sin_family = AF_INET;
-    dst.sin_port   = htons(dest_port);
-    inet_pton(AF_INET, dest_ip.c_str(), &dst.sin_addr);
+    // Configure transport based on command line args
+    std::unique_ptr<DataWriter> writer;
 
-    auto dump_and_send = [&]{
+    if (args.at("--stdout").asBool()) {
+        writer = DataWriter::create_stdout();
+    }
+    else if (args.at("--stderr").asBool()) {
+        writer = DataWriter::create_stderr();
+    }
+    else if (args.at("--udp").asBool()) {
+        std::string dest_ip = args.at("--dest-ip").asString();
+        int dest_port = std::stoi(args.at("--dest-port").asString());
+        writer = DataWriter::create_udp(dest_ip, dest_port);
+    }
+    else if (args.at("--tcp").asBool()) {
+        std::string dest_ip = args.at("--dest-ip").asString();
+        int dest_port = std::stoi(args.at("--dest-port").asString());
+        writer = DataWriter::create_tcp(dest_ip, dest_port);
+    }
+    else if (args.at("--zmq").asBool()) {
+        std::string endpoint = args.at("--endpoint").asString();
+        std::string mode = args.at("--mode").asString();
+        bool hostname_tag = args.at("--hostname-tag").asBool();
+        bool should_bind = (mode == "bind");
+        writer = DataWriter::create_zmq(endpoint, should_bind, hostname_tag? hostname : "");
+    }
+
+    writer->set_compression(compress);
+
+    auto dump_and_send = [&]() {
         double now = std::chrono::system_clock::now().time_since_epoch().count() / 1e9;
-        std::ostringstream o;
 
         auto pppoe = pppoe_dump_json();
         auto survey = wifi_survey_dump_json(ifname);
         auto stations = wifi_stations_dump_json(ifname);
 
+        // Build JSON message
+        std::ostringstream o;
         o << "{\"hostname\": \"" << hostname << "\""
-          << ", \"sent\": " << std::fixed <<  std::setprecision(3)  << now
+          << ", \"sent\": " << std::fixed << std::setprecision(3) << now
           << ", \"pppoe\": " << pppoe
           << ", \"wireless\": " << survey
           << ", \"stations\": " << stations
-          << "}";
+          << "}" << std::endl;
 
-        const std::string& s = o.str();
-
-        if (stdout) {
-
-            std::cout << o.str() << std::endl;
-
-        } else if (compress) {
-
-            auto gz = gzip(s);
-            sendto(sock, gz.data(), gz.size(), 0, reinterpret_cast<sockaddr*>(&dst), sizeof(dst));
-
-        } else {
-
-            sendto(sock, s.c_str(), s.length(), 0, reinterpret_cast<sockaddr*>(&dst), sizeof(dst));
-
+        // Send via configured transport
+        auto result = writer->write(o.str());
+        if (!result) {
+            std::cerr << "Failed to send data: " << result.error() << std::endl;
         }
     };
 
-
-    dump_and_send();
-    for (int i = 1; count == 0 || i < count; ++i) {
-
-        if (interval > 0)
+    do {
+        dump_and_send();
+        if (interval > 0 && count != 1)
             std::this_thread::sleep_for(std::chrono::milliseconds(interval));
 
-        dump_and_send();
-    };
+    } while( count-- != 0);
 
-    close(sock);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100)); // wait a bit so network buffers get a chance to flush out
+
     return 0;
 }
-
