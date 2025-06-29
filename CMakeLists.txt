@@ -1,9 +1,8 @@
 cmake_minimum_required(VERSION 3.20)
 project(MyProject LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_EXE_LINKER_FLAGS "-static")
 
 # PKG_CONFIG setup for cross-compilation
 set(ENV{PKG_CONFIG_PATH} "")
@@ -31,7 +30,8 @@ GIT_TAG 11.2.0
 )
 
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(LIBNL REQUIRED libnl-3.0 libnl-genl-3.0)
+pkg_check_modules(ZLIB REQUIRED zlib)
+pkg_check_modules(LIBNL REQUIRED libnl-3.0)
 
 # Targets
 add_executable(wireless-stats src/main.cpp
