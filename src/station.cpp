@@ -1,21 +1,22 @@
 #include "station.h"
 #include <dirent.h>
 #include <algorithm>
-#include <experimental/iterator>
-#include <iostream>
-#include <iomanip>
 #include <numeric>
 #include <filesystem>
-namespace fs = std::filesystem;
 
+#include <iostream>
+
+#define FMT_HEADER_ONLY
+#include <fmt/format.h>
+#include <fmt/ranges.h>
+
+namespace fs = std::filesystem;
 
 #define BIT(x) (1ULL<<(x))
 
 static std::string mac_addr_n2a(const unsigned char *mac) {
-    char buf[20];
-    snprintf(buf, sizeof(buf), "%02x:%02x:%02x:%02x:%02x:%02x",
-             mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-    return std::string(buf);
+    return fmt::format("{:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}",
+                       mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 }
 
 static std::string power_mode_to_string(uint32_t pm) {
@@ -39,7 +40,7 @@ static BitrateInfo parse_bitrate(struct nlattr *bitrate_attr) {
     BitrateInfo info;
     struct nlattr *rinfo[NL80211_RATE_INFO_MAX + 1];
     static struct nla_policy rate_policy[NL80211_RATE_INFO_MAX + 1];
-    
+
     // Initialize policy array
     memset(rate_policy, 0, sizeof(rate_policy));
     rate_policy[NL80211_RATE_INFO_BITRATE].type = NLA_U16;
@@ -134,7 +135,7 @@ static TxqStats parse_txq_stats(struct nlattr *tid_stats_attr) {
     TxqStats stats;
     struct nlattr *txqstats_info[NL80211_TXQ_STATS_MAX + 1];
     static struct nla_policy txqstats_policy[NL80211_TXQ_STATS_MAX + 1];
-    
+
     // Initialize policy array
     memset(txqstats_policy, 0, sizeof(txqstats_policy));
     txqstats_policy[NL80211_TXQ_STATS_BACKLOG_BYTES].type = NLA_U32;
@@ -186,9 +187,9 @@ static std::vector<TidStats> parse_tid_stats(struct nlattr *tid_stats_attr) {
     std::vector<TidStats> tid_stats;
     struct nlattr *tidattr;
     int rem, tid = 0;
-    
+
     static struct nla_policy stats_policy[NL80211_TID_STATS_MAX + 1];
-    
+
     // Initialize policy array
     memset(stats_policy, 0, sizeof(stats_policy));
     stats_policy[NL80211_TID_STATS_RX_MSDU].type = NLA_U64;
@@ -232,7 +233,7 @@ static BssParam parse_bss_param(struct nlattr *bss_param_attr) {
     BssParam param;
     struct nlattr *bss_param_info[NL80211_STA_BSS_PARAM_MAX + 1];
     static struct nla_policy bss_policy[NL80211_STA_BSS_PARAM_MAX + 1];
-    
+
     // Initialize policy array
     memset(bss_policy, 0, sizeof(bss_policy));
     bss_policy[NL80211_STA_BSS_PARAM_CTS_PROT].type = NLA_FLAG;
@@ -267,7 +268,7 @@ static BssParam parse_bss_param(struct nlattr *bss_param_attr) {
 static std::vector<int8_t> get_chain_signal(struct nlattr *attr_list) {
     std::vector<int8_t> chain_signals;
     if (!attr_list) return chain_signals;
-    
+
     struct nlattr *attr;
     int rem;
     nla_for_each_nested(attr, attr_list, rem) {
@@ -290,10 +291,10 @@ static int station_dump_handler(struct nl_msg *msg, void *arg) {
     struct nlattr *tb[NL80211_ATTR_MAX + 1];
     struct genlmsghdr *gnlh = (struct genlmsghdr*)nlmsg_data(nlmsg_hdr(msg));
     struct nlattr *sinfo[NL80211_STA_INFO_MAX + 1];
-    
+
     static struct nla_policy stats_policy[NL80211_STA_INFO_MAX + 1];
     static bool policy_initialized = false;
-    
+
     if (!policy_initialized) {
         memset(stats_policy, 0, sizeof(stats_policy));
         stats_policy[NL80211_STA_INFO_INACTIVE_TIME].type = NLA_U32;
@@ -577,7 +578,7 @@ static int ack_handler(struct nl_msg *msg, void *arg) {
     return NL_STOP;
 }
 
-const StationInfo wifi_station_dump(const std::string& interface) {
+const StationInfo wifi_station_dump(const std::string& interface, MacAddress  mac_bytes) {
     struct nl_sock *sock = nullptr;
     struct nl_msg *msg = nullptr;
     struct nl_cb *cb = nullptr;
@@ -616,7 +617,9 @@ const StationInfo wifi_station_dump(const std::string& interface) {
     if (ifindex == 0) {
         goto cleanup;
     }
+
     nla_put_u32(msg, NL80211_ATTR_IFINDEX, ifindex);
+    nla_put(msg, NL80211_ATTR_MAC, 6, mac_bytes.data());
 
     // Set up callbacks
     cb = nl_cb_alloc(NL_CB_DEFAULT);
@@ -646,9 +649,48 @@ const StationInfo wifi_station_dump(const std::string& interface) {
 cleanup:
     if (msg) nlmsg_free(msg);
     if (sock) nl_socket_free(sock);
-    
+
     return std::move(station);
 }
+
+
+// Helper template for optional values
+template<typename T>
+std::string format_optional(const char* name, const std::optional<T>& opt) {
+    if (!opt.has_value()) return "";
+
+    if constexpr (std::is_same_v<T, std::string>) {
+        return fmt::format(R"("{}"  : "{}")", name, *opt);
+    } else if constexpr (std::is_same_v<T, bool>) {
+        return fmt::format(R"("{}" : {})", name, *opt ? "true" : "false");
+    } else if constexpr (std::is_same_v<T, int8_t> || std::is_same_v<T, uint8_t>) {
+        return fmt::format(R"("{}" : {})", name, static_cast<int16_t>(*opt));
+    } else {
+        return fmt::format(R"("{}" : {})", name, *opt);
+    }
+}
+
+// Helper for required values
+template<typename T>
+std::string format_value(const char* name, const T& val) {
+    if constexpr (std::is_same_v<T, std::string>) {
+        return fmt::format(R"("{}" : "{}")", name, val);
+    } else if constexpr (std::is_same_v<T, bool>) {
+        return fmt::format(R"("{}" : {})", name, val ? "true" : "false");
+    } else if constexpr (std::is_same_v<T, int8_t> || std::is_same_v<T, uint8_t>) {
+        return fmt::format(R"("{}" : {})", name, static_cast<int16_t>(val));
+    } else {
+        return fmt::format(R"("{}" : {})", name, val);
+    }
+}
+
+template<typename T>
+void add_if_present(std::vector<std::string>& fields, const T& field, const char* name) {
+    if (auto str = format_optional(name, field); !str.empty()) {
+        fields.push_back(str);
+    }
+ };
+
 
 // Helper template for optional values
 template<typename T>
@@ -686,258 +728,260 @@ void add_value(std::ostringstream& output, const char* name, const T& val, bool&
     first = false;
 }
 
-// Macro for optional fields
-#define ADD_OPT(name) add_optional(output, #name, info.name, first)
-#define ADD_VAL(name) add_value(output, #name, info.name, first)
-
 std::string serialize_bitrate(const BitrateInfo& bitrate) {
-    std::ostringstream output;
-    output << "{";
-    bool first = true;
-    
-    add_value(output, "rate_mbps_x10", bitrate.rate_mbps_x10, first);
-    add_optional(output, "mcs", bitrate.mcs, first);
-    add_optional(output, "vht_mcs", bitrate.vht_mcs, first);
-    add_optional(output, "vht_nss", bitrate.vht_nss, first);
-    add_optional(output, "he_mcs", bitrate.he_mcs, first);
-    add_optional(output, "he_nss", bitrate.he_nss, first);
-    add_optional(output, "he_gi", bitrate.he_gi, first);
-    add_optional(output, "he_dcm", bitrate.he_dcm, first);
-    add_optional(output, "he_ru_alloc", bitrate.he_ru_alloc, first);
-    add_optional(output, "eht_mcs", bitrate.eht_mcs, first);
-    add_optional(output, "eht_nss", bitrate.eht_nss, first);
-    add_optional(output, "eht_gi", bitrate.eht_gi, first);
-    add_optional(output, "eht_ru_alloc", bitrate.eht_ru_alloc, first);
-    
-    add_value(output, "short_gi", bitrate.short_gi, first);
-    add_value(output, "width_40mhz", bitrate.width_40mhz, first);
-    add_value(output, "width_80mhz", bitrate.width_80mhz, first);
-    add_value(output, "width_80p80mhz", bitrate.width_80p80mhz, first);
-    add_value(output, "width_160mhz", bitrate.width_160mhz, first);
-    add_value(output, "width_320mhz", bitrate.width_320mhz, first);
-    add_value(output, "width_1mhz", bitrate.width_1mhz, first);
-    add_value(output, "width_2mhz", bitrate.width_2mhz, first);
-    add_value(output, "width_4mhz", bitrate.width_4mhz, first);
-    add_value(output, "width_8mhz", bitrate.width_8mhz, first);
-    add_value(output, "width_16mhz", bitrate.width_16mhz, first);
-    
-    output << "}";
-    return output.str();
+
+    std::vector<std::string> fields;
+
+    fields.push_back(format_value("rate_mbps_x10", bitrate.rate_mbps_x10));
+
+    add_if_present(fields, bitrate.mcs, "mcs");
+    add_if_present(fields, bitrate.vht_mcs, "vht_mcs");
+    add_if_present(fields, bitrate.vht_nss, "vht_nss");
+    add_if_present(fields, bitrate.he_mcs, "he_mcs");
+    add_if_present(fields, bitrate.he_nss, "he_nss");
+    add_if_present(fields, bitrate.he_gi, "he_gi");
+    add_if_present(fields, bitrate.he_dcm, "he_dcm");
+    add_if_present(fields, bitrate.he_ru_alloc, "he_ru_alloc");
+    add_if_present(fields, bitrate.eht_mcs, "eht_mcs");
+    add_if_present(fields, bitrate.eht_nss, "eht_nss");
+    add_if_present(fields, bitrate.eht_gi, "eht_gi");
+    add_if_present(fields, bitrate.eht_ru_alloc, "eht_ru_alloc");
+
+    fields.push_back(format_value("short_gi", bitrate.short_gi));
+    fields.push_back(format_value("width_40mhz", bitrate.width_40mhz));
+    fields.push_back(format_value("width_80mhz", bitrate.width_80mhz));
+    fields.push_back(format_value("width_80p80mhz", bitrate.width_80p80mhz));
+    fields.push_back(format_value("width_160mhz", bitrate.width_160mhz));
+    fields.push_back(format_value("width_320mhz", bitrate.width_320mhz));
+    fields.push_back(format_value("width_1mhz", bitrate.width_1mhz));
+    fields.push_back(format_value("width_2mhz", bitrate.width_2mhz));
+    fields.push_back(format_value("width_4mhz", bitrate.width_4mhz));
+    fields.push_back(format_value("width_8mhz", bitrate.width_8mhz));
+    fields.push_back(format_value("width_16mhz", bitrate.width_16mhz));
+
+    return fmt::format("{{{}}}", fmt::join(fields, ", "));
 }
 
 std::string serialize_txq_stats(const TxqStats& txq) {
-    std::ostringstream output;
-    output << "{";
-    bool first = true;
-    
-    add_optional(output, "backlog_bytes", txq.backlog_bytes, first);
-    add_optional(output, "backlog_packets", txq.backlog_packets, first);
-    add_optional(output, "flows", txq.flows, first);
-    add_optional(output, "drops", txq.drops, first);
-    add_optional(output, "ecn_marks", txq.ecn_marks, first);
-    add_optional(output, "overlimit", txq.overlimit, first);
-    add_optional(output, "collisions", txq.collisions, first);
-    add_optional(output, "tx_bytes", txq.tx_bytes, first);
-    add_optional(output, "tx_packets", txq.tx_packets, first);
-    
-    output << "}";
-    return output.str();
+    std::vector<std::string> fields;
+
+    add_if_present(fields, txq.backlog_bytes, "backlog_bytes");
+    add_if_present(fields, txq.backlog_packets, "backlog_packets");
+    add_if_present(fields, txq.flows, "flows");
+    add_if_present(fields, txq.drops, "drops");
+    add_if_present(fields, txq.ecn_marks, "ecn_marks");
+    add_if_present(fields, txq.overlimit, "overlimit");
+    add_if_present(fields, txq.collisions, "collisions");
+    add_if_present(fields, txq.tx_bytes, "tx_bytes");
+    add_if_present(fields, txq.tx_packets, "tx_packets");
+
+    return fmt::format("{{{}}}", fmt::join(fields, ", "));
 }
 
 std::string serialize_tid_stats(const TidStats& tid) {
-    std::ostringstream output;
-    output << "{";
-    bool first = true;
-    
-    add_value(output, "tid", tid.tid, first);
-    add_optional(output, "rx_msdu", tid.rx_msdu, first);
-    add_optional(output, "tx_msdu", tid.tx_msdu, first);
-    add_optional(output, "tx_msdu_retries", tid.tx_msdu_retries, first);
-    add_optional(output, "tx_msdu_failed", tid.tx_msdu_failed, first);
-    
+    std::vector<std::string> fields;
+    fields.push_back(format_value("tid", tid.tid));
+
+    add_if_present(fields, tid.rx_msdu, "rx_msdu");
+    add_if_present(fields, tid.tx_msdu, "tx_msdu");
+    add_if_present(fields, tid.tx_msdu_retries, "tx_msdu_retries");
+    add_if_present(fields, tid.tx_msdu_failed, "tx_msdu_failed");
+
     if (tid.txq_stats.has_value()) {
-        if (!first) output << ", ";
-        output << "\"txq_stats\": " << serialize_txq_stats(*tid.txq_stats);
-        first = false;
+        fields.push_back(fmt::format(R"("txq_stats" : {})", serialize_txq_stats(*tid.txq_stats)));
     }
-    
-    output << "}";
-    return output.str();
+
+    return fmt::format("{{{}}}", fmt::join(fields, ", "));
 }
 
 std::string serialize_bss_param(const BssParam& bss) {
-    std::ostringstream output;
-    output << "{";
-    bool first = true;
-    
-    add_optional(output, "dtim_period", bss.dtim_period, first);
-    add_optional(output, "beacon_interval", bss.beacon_interval, first);
-    add_optional(output, "cts_protection", bss.cts_protection, first);
-    add_optional(output, "short_preamble", bss.short_preamble, first);
-    add_optional(output, "short_slot_time", bss.short_slot_time, first);
-    
-    output << "}";
-    return output.str();
+    std::vector<std::string> fields;
+
+    add_if_present(fields, bss.dtim_period, "dtim_period");
+    add_if_present(fields, bss.beacon_interval, "beacon_interval");
+    add_if_present(fields, bss.cts_protection, "cts_protection");
+    add_if_present(fields, bss.short_preamble, "short_preamble");
+    add_if_present(fields, bss.short_slot_time, "short_slot_time");
+
+    return fmt::format("{{{}}}", fmt::join(fields, ", "));
 }
 
 std::string serialize_station_flags(const StationFlags& flags) {
-    std::ostringstream output;
-    output << "{";
-    bool first = true;
-    
-    add_optional(output, "authorized", flags.authorized, first);
-    add_optional(output, "authenticated", flags.authenticated, first);
-    add_optional(output, "associated", flags.associated, first);
-    add_optional(output, "short_preamble", flags.short_preamble, first);
-    add_optional(output, "wmm_wme", flags.wmm_wme, first);
-    add_optional(output, "mfp", flags.mfp, first);
-    add_optional(output, "tdls_peer", flags.tdls_peer, first);
-    
-    output << "}";
-    return output.str();
+    std::vector<std::string> fields;
+
+    add_if_present(fields, flags.authorized, "authorized");
+    add_if_present(fields, flags.authenticated, "authenticated");
+    add_if_present(fields, flags.associated, "associated");
+    add_if_present(fields, flags.short_preamble, "short_preamble");
+    add_if_present(fields, flags.wmm_wme, "wmm_wme");
+    add_if_present(fields, flags.mfp, "mfp");
+    add_if_present(fields, flags.tdls_peer, "tdls_peer");
+
+    return fmt::format("{{{}}}", fmt::join(fields, ", "));
 }
 
 const std::string wifi_station_dump_json(const StationInfo& info) {
-    std::ostringstream output;
-    output << "{";
-    bool first = true;
+    std::vector<std::string> fields;
 
     // Required fields
-    ADD_VAL(mac_address);
-    ADD_VAL(interface);
-    ADD_VAL(current_time_ms);
-    
-    // Optional scalar fields
-    ADD_OPT(inactive_time_ms);
-    ADD_OPT(rx_bytes);
-    ADD_OPT(rx_packets);
-    ADD_OPT(tx_bytes);
-    ADD_OPT(tx_packets);
-    ADD_OPT(tx_retries);
-    ADD_OPT(tx_failed);
-    ADD_OPT(beacon_loss);
-    ADD_OPT(beacon_rx);
-    ADD_OPT(rx_drop_misc);
-    ADD_OPT(signal_dbm);
-    ADD_OPT(signal_avg_dbm);
-    ADD_OPT(beacon_signal_avg_dbm);
-    ADD_OPT(t_offset_us);
-    ADD_OPT(tx_duration_us);
-    ADD_OPT(rx_duration_us);
-    ADD_OPT(last_ack_signal_dbm);
-    ADD_OPT(avg_ack_signal_dbm);
-    ADD_OPT(airtime_weight);
-    ADD_OPT(expected_throughput_kbps);
-    
+    fields.push_back(format_value("mac_address", info.mac_address));
+    fields.push_back(format_value("interface", info.interface));
+    fields.push_back(format_value("current_time_ms", info.current_time_ms));
+
+    add_if_present(fields, info.inactive_time_ms, "inactive_time_ms");
+    add_if_present(fields, info.rx_bytes, "rx_bytes");
+    add_if_present(fields, info.rx_packets, "rx_packets");
+    add_if_present(fields, info.tx_bytes, "tx_bytes");
+    add_if_present(fields, info.tx_packets, "tx_packets");
+    add_if_present(fields, info.tx_retries, "tx_retries");
+    add_if_present(fields, info.tx_failed, "tx_failed");
+    add_if_present(fields, info.beacon_loss, "beacon_loss");
+    add_if_present(fields, info.beacon_rx, "beacon_rx");
+    add_if_present(fields, info.rx_drop_misc, "rx_drop_misc");
+    add_if_present(fields, info.signal_dbm, "signal_dbm");
+    add_if_present(fields, info.signal_avg_dbm, "signal_avg_dbm");
+    add_if_present(fields, info.beacon_signal_avg_dbm, "beacon_signal_avg_dbm");
+    add_if_present(fields, info.t_offset_us, "t_offset_us");
+    add_if_present(fields, info.tx_duration_us, "tx_duration_us");
+    add_if_present(fields, info.rx_duration_us, "rx_duration_us");
+    add_if_present(fields, info.last_ack_signal_dbm, "last_ack_signal_dbm");
+    add_if_present(fields, info.avg_ack_signal_dbm, "avg_ack_signal_dbm");
+    add_if_present(fields, info.airtime_weight, "airtime_weight");
+    add_if_present(fields, info.expected_throughput_kbps, "expected_throughput_kbps");
+
     // Mesh fields
-    ADD_OPT(mesh_llid);
-    ADD_OPT(mesh_plid);
-    ADD_OPT(mesh_plink_state);
-    ADD_OPT(mesh_airtime_link_metric);
-    ADD_OPT(mesh_connected_to_gate);
-    ADD_OPT(mesh_connected_to_as);
-    ADD_OPT(mesh_local_ps_mode);
-    ADD_OPT(mesh_peer_ps_mode);
-    ADD_OPT(mesh_nonpeer_ps_mode);
-    
-    ADD_OPT(connected_time_sec);
-    ADD_OPT(assoc_at_boottime_us);
-    ADD_OPT(assoc_at_ms);
-    
+    add_if_present(fields, info.mesh_llid, "mesh_llid");
+    add_if_present(fields, info.mesh_plid, "mesh_plid");
+    add_if_present(fields, info.mesh_plink_state, "mesh_plink_state");
+    add_if_present(fields, info.mesh_airtime_link_metric, "mesh_airtime_link_metric");
+    add_if_present(fields, info.mesh_connected_to_gate, "mesh_connected_to_gate");
+    add_if_present(fields, info.mesh_connected_to_as, "mesh_connected_to_as");
+    add_if_present(fields, info.mesh_local_ps_mode, "mesh_local_ps_mode");
+    add_if_present(fields, info.mesh_peer_ps_mode, "mesh_peer_ps_mode");
+    add_if_present(fields, info.mesh_nonpeer_ps_mode, "mesh_nonpeer_ps_mode");
+
+    add_if_present(fields, info.connected_time_sec, "connected_time_sec");
+    add_if_present(fields, info.assoc_at_boottime_us, "assoc_at_boottime_us");
+    add_if_present(fields, info.assoc_at_ms, "assoc_at_ms");
+
     // Complex optional fields
     if (info.tx_bitrate.has_value()) {
-        if (!first) output << ", ";
-        output << "\"tx_bitrate\": " << serialize_bitrate(*info.tx_bitrate);
-        first = false;
+        fields.push_back(fmt::format(R"("tx_bitrate" : {})", serialize_bitrate(*info.tx_bitrate)));
     }
-    
+
     if (info.rx_bitrate.has_value()) {
-        if (!first) output << ", ";
-        output << "\"rx_bitrate\": " << serialize_bitrate(*info.rx_bitrate);
-        first = false;
+        fields.push_back(fmt::format(R"("rx_bitrate" : {})", serialize_bitrate(*info.rx_bitrate)));
     }
-    
+
     if (info.flags.has_value()) {
-        if (!first) output << ", ";
-        output << "\"flags\": " << serialize_station_flags(*info.flags);
-        first = false;
+        fields.push_back(fmt::format(R"("flags" : {})", serialize_station_flags(*info.flags)));
     }
-    
+
     if (info.bss_param.has_value()) {
-        if (!first) output << ", ";
-        output << "\"bss_param\": " << serialize_bss_param(*info.bss_param);
-        first = false;
+        fields.push_back(fmt::format(R"("bss_param" : {})", serialize_bss_param(*info.bss_param)));
     }
-    
+
     // Arrays
     if (!info.tid_stats.empty()) {
-        if (!first) output << ", ";
-        output << "\"tid_stats\": [";
-        for (size_t i = 0; i < info.tid_stats.size(); ++i) {
-            if (i > 0) output << ", ";
-            output << serialize_tid_stats(info.tid_stats[i]);
+        std::vector<std::string> tid_json;
+        tid_json.reserve(info.tid_stats.size());
+        for (const auto& tid : info.tid_stats) {
+            tid_json.push_back(serialize_tid_stats(tid));
         }
-        output << "]";
-        first = false;
+        fields.push_back(fmt::format(R"("tid_stats" : [{}])", fmt::join(tid_json, ", ")));
     }
-    
-    if (!info.chain_signal.empty()) {
-        if (!first) output << ", ";
-        output << "\"chain_signal\": [";
-        for (size_t i = 0; i < info.chain_signal.size(); ++i) {
-            if (i > 0) output << ", ";
-            output << static_cast<int>(info.chain_signal[i]);
-        }
-        output << "]";
-        first = false;
-    }
-    
-    if (!info.chain_signal_avg.empty()) {
-        if (!first) output << ", ";
-        output << "\"chain_signal_avg\": [";
-        for (size_t i = 0; i < info.chain_signal_avg.size(); ++i) {
-            if (i > 0) output << ", ";
-            output << static_cast<int>(info.chain_signal_avg[i]);
-        }
-        output << "]";
-        first = false;
-    }
-    
-    output << "}";
-    return output.str();
 
+    if (!info.chain_signal.empty()) {
+        std::vector<int> chain_vals;
+        chain_vals.reserve(info.chain_signal.size());
+        for (const auto& signal : info.chain_signal) {
+            chain_vals.push_back(static_cast<int>(signal));
+        }
+        fields.push_back(fmt::format(R"("chain_signal" : [{}])", fmt::join(chain_vals, ", ")));
+    }
+
+    if (!info.chain_signal_avg.empty()) {
+        std::vector<int> chain_avg_vals;
+        chain_avg_vals.reserve(info.chain_signal_avg.size());
+        for (const auto& signal : info.chain_signal_avg) {
+            chain_avg_vals.push_back(static_cast<int>(signal));
+        }
+        fields.push_back(fmt::format(R"("chain_signal_avg" : [{}])", fmt::join(chain_avg_vals, ", ")));
+    }
+
+    return fmt::format("{{{}}}", fmt::join(fields, ", "));
 }
 
-#undef ADD_OPT
-#undef ADD_VAL
+std::vector<MacAddress> getStations(const std::string& iface) {
 
-std::vector<std::string> getStations(const std::string& iface)
-{
-    std::vector<std::string> stations;
-    const std::string scanName = iface + ".sta";
-    for (const auto& e : fs::directory_iterator("/sys/class/net"))
-        if (e.is_symlink() && e.path().filename().string().rfind(scanName.c_str(), 0) == 0)
-            stations.push_back(e.path().filename().string());
+    std::vector<MacAddress> stations;
+
+    struct nl_sock* sock = nl_socket_alloc();
+    if (!sock) return stations;
+
+    if (genl_connect(sock) < 0) {
+        nl_socket_free(sock);
+        return stations;
+    }
+
+    int nl80211_id = genl_ctrl_resolve(sock, "nl80211");
+    int ifidx = if_nametoindex(iface.c_str());
+    if (!ifidx) {
+        nl_socket_free(sock);
+        return stations;
+    }
+
+    struct nl_msg* msg = nlmsg_alloc();
+    genlmsg_put(msg, NL_AUTO_PORT, NL_AUTO_SEQ, nl80211_id, 0, NLM_F_DUMP,
+                NL80211_CMD_GET_STATION, 0);
+    nla_put_u32(msg, NL80211_ATTR_IFINDEX, ifidx);
+
+    auto cb = nl_cb_alloc(NL_CB_DEFAULT);
+    nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM,
+              [](struct nl_msg* msg, void* arg) -> int {
+                  std::vector<MacAddress>* out = static_cast<std::vector<MacAddress>*>(arg);
+                  struct genlmsghdr* gnlh = static_cast<genlmsghdr*>(nlmsg_data(nlmsg_hdr(msg)));
+                  struct nlattr* attrs[NL80211_ATTR_MAX + 1];
+
+                  nla_parse(attrs, NL80211_ATTR_MAX,
+                            genlmsg_attrdata(gnlh, 0),
+                            genlmsg_attrlen(gnlh, 0), nullptr);
+
+                  if (attrs[NL80211_ATTR_MAC]) {
+                      MacAddress interface;
+                      std::copy_n(static_cast<uint8_t*>(nla_data(attrs[NL80211_ATTR_MAC])),
+                                  8,
+                                  interface.begin());
+                      out->push_back(interface);
+                  }
+
+                  return NL_OK;
+              }, &stations);
+
+    nl_send_auto(sock, msg);
+    nl_recvmsgs(sock, cb);
+
+    nl_cb_put(cb);
+    nlmsg_free(msg);
+    nl_socket_free(sock);
 
     return stations;
 }
 
 const std::string wifi_stations_dump_json(const std::string& ifname)
 {
-    const std::vector<std::string> stations = getStations(ifname);
+    const std::vector<MacAddress> stations = getStations(ifname);
     if (stations.size() == 0)
         return "[]";
 
-    std::ostringstream output;
-    output << "[";
+    std::vector<std::string> json_stations;
+    json_stations.reserve(stations.size());
 
     std::transform(stations.begin(), stations.end(),
-                   std::experimental::make_ostream_joiner(output, ", "),
-                   [](const auto& sta){
-                       return wifi_station_dump_json(wifi_station_dump(sta));
+                   std::back_inserter(json_stations),
+                   [ifname](const auto& sta) {
+                       return wifi_station_dump_json(wifi_station_dump(ifname, sta));
                    });
 
-    output << "]";
-
-    return output.str();
+    return fmt::format("[{}]", fmt::join(json_stations, ", "));
 }

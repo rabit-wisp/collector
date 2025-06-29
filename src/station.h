@@ -19,6 +19,8 @@
 #include <map>
 #include <optional>
 
+using MacAddress = std::array<uint8_t,8>;
+
 struct BitrateInfo {
     int rate_mbps_x10 = 0;  // Rate * 10 (e.g., 65 for 6.5 Mbps)
     std::optional<int> mcs;
