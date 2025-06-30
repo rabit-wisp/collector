@@ -55,10 +55,16 @@ jobs:
           else
             echo "tag=${GITHUB_REF##*/}" >> "$GITHUB_OUTPUT"
           fi
+          # Get latest toolchain tag
+          toolchain_tag=$(gh release view --repo rabit-wisp/toolchain --json tagName -q .tagName)
+          echo "toolchain_release=$toolchain_tag" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 
       - name: Download latest release assets
         run: |
-          gh release download --repo rabit-wisp/toolchain --dir ./downloaded-assets
+          gh release download "${{ steps.vars.outputs.toolchain_release }}" --repo rabit-wisp/toolchain --dir ./downloaded-assets
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
