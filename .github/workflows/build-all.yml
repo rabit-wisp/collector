@@ -1,0 +1,59 @@
+name: Build and Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Select Branch'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+        - production
+        - development
+        # add other branches here if necessary
+
+permissions:
+  contents: write  # Required for creating releases
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    container:
+      image: debian:bookworm
+      options: --privileged
+
+    steps:
+      - name: Install prerequisites
+        run: |
+          apt-get update
+          apt-get install -y git wget make binutils build-essential gzip bzip2 tar unzip
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch || github.ref }}
+          fetch-depth: 0  # fetch full history including tags
+
+      - name: Trust workspace directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Get current tag
+        shell: bash
+        id: vars
+        run: |
+          tag=$(git describe --tags --abbrev=0)
+          echo "release=$tag" >> "$GITHUB_OUTPUT"
+          if [[ "${{ github.event_name }}" = "workflow_dispatch" && "${{ github.event.inputs.branch }}" == "development" ]]; then
+            echo "tag=${{ github.event.inputs.branch }}-$(date +%Y%m%d-%H%M%S)" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF##*/}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download latest release assets
+        run: |
+          gh release download --repo rabit-wisp/toolchain --dir ./downloaded-assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
