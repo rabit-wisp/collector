@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(MyProject LANGUAGES CXX)
+project(wireless-stats LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -9,6 +9,8 @@ set(ENV{PKG_CONFIG_PATH} "")
 set(ENV{PKG_CONFIG_LIBDIR} "${CMAKE_SYSROOT}/usr/lib/pkgconfig:${CMAKE_SYSROOT}/usr/share/pkgconfig")
 set(ENV{PKG_CONFIG_SYSROOT_DIR} "${CMAKE_SYSROOT}")
 set(CMAKE_PKG_CONFIG_EXECUTABLE "${TOOLCHAIN_PREFIX}/bin/pkg-config")
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/binaries/)
 
 include(FetchContent)
 
@@ -53,3 +55,5 @@ target_link_libraries(wireless-stats PRIVATE
                                              #simdjson::simdjson
                                              docopt_s
 )
+
+set_target_properties(wireless-stats PROPERTIES OUTPUT_NAME "${CMAKE_PROJECT_NAME}.${CMAKE_SYSTEM_PROCESSOR}")
