@@ -28,7 +28,7 @@ jobs:
       - name: Install prerequisites
         run: |
           apt-get update
-          apt-get install -y git curl wget make binutils build-essential gzip bzip2 tar unzip
+          apt-get install -y git curl wget pkg-config cmake make binutils build-essential gzip bzip2 tar unzip
           curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
           chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
           echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list
@@ -68,3 +68,42 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Unpack toolchains
+        run: |
+          ls -la
+          for i in ./downloaded-assets/*.tar.gz
+          do
+            tar zxvf $i
+          done
+          ls -la
+          ls -la ./cmake/toolchains/../../arm-buildroot-linux-musleabihf_sdk-buildroot//bin/arm-linux-g++
+
+
+      - name: Make and build each target toolchain
+        run: |
+          mkdir artifacts
+          for i in cmake/toolchains/*.cmake
+          do
+            mkdir build-$(basename $i)
+            cd build-$(basename $i)
+            cmake -DCMAKE_TOOLCHAIN_FILE=$i ..
+            make
+            mv binaries/* ../artifacts/
+            cd ..
+          done
+
+      - name: Compress artifacts
+        run: |
+          for i in artifacts/*
+          do
+            gzip $i
+          done
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.vars.outputs.release }}
+          files: artifacts/*.gz
+          draft: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
