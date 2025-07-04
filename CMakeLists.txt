@@ -1,14 +1,8 @@
 cmake_minimum_required(VERSION 3.20)
 project(telemetry LANGUAGES CXX)
-
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# PKG_CONFIG setup for cross-compilation
-set(ENV{PKG_CONFIG_PATH} "")
-set(ENV{PKG_CONFIG_LIBDIR} "${CMAKE_SYSROOT}/usr/lib/pkgconfig:${CMAKE_SYSROOT}/usr/share/pkgconfig")
-set(ENV{PKG_CONFIG_SYSROOT_DIR} "${CMAKE_SYSROOT}")
-set(CMAKE_PKG_CONFIG_EXECUTABLE "${TOOLCHAIN_PREFIX}/bin/pkg-config")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/binaries/)
 
 # Apply properties to all executables at once
@@ -62,15 +56,6 @@ GIT_SHALLOW TRUE
 GIT_TAG v4.3.5
 )
 FetchContent_MakeAvailable(libzmq)
-
-
-# Fetch fmt
-FetchContent_Declare(
-fmt
-GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-GIT_SHALLOW TRUE
-GIT_TAG 11.2.0
-)
 
 set(ZLIB_USE_STATIC_LIBS ON)
 
