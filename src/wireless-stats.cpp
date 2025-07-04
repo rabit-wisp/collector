@@ -114,7 +114,7 @@ int main(int argc, const char* argv[]) {
         if (interval > 0 && count != 1)
             std::this_thread::sleep_for(std::chrono::milliseconds(interval));
 
-    } while( count-- != 0);
+    } while( count == 0 || --count > 0);
 
     std::this_thread::sleep_for(std::chrono::milliseconds(100)); // wait a bit so network buffers get a chance to flush out
 
