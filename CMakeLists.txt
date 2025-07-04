@@ -9,10 +9,23 @@ set(ENV{PKG_CONFIG_PATH} "")
 set(ENV{PKG_CONFIG_LIBDIR} "${CMAKE_SYSROOT}/usr/lib/pkgconfig:${CMAKE_SYSROOT}/usr/share/pkgconfig")
 set(ENV{PKG_CONFIG_SYSROOT_DIR} "${CMAKE_SYSROOT}")
 set(CMAKE_PKG_CONFIG_EXECUTABLE "${TOOLCHAIN_PREFIX}/bin/pkg-config")
-
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/binaries/)
 
+# Apply properties to all executables at once
+function(apply_target_to_executable_names)
+  get_directory_property(targets BUILDSYSTEM_TARGETS)
+  foreach(target ${targets})
+      get_target_property(target_type ${target} TYPE)
+      if(target_type STREQUAL "EXECUTABLE")
+          # Do something with each executable
+          set_target_properties(${target} PROPERTIES OUTPUT_NAME "${target}.${CMAKE_SYSTEM_PROCESSOR}")
+      endif()
+
+  endforeach()
+endfunction()
+
 include(FetchContent)
+
 
 # Fetch docopt
 FetchContent_Declare(
@@ -57,3 +70,4 @@ target_link_libraries(wireless-stats PRIVATE
 )
 
 set_target_properties(wireless-stats PROPERTIES OUTPUT_NAME "${CMAKE_PROJECT_NAME}.${CMAKE_SYSTEM_PROCESSOR}")
+apply_target_to_executable_names()
