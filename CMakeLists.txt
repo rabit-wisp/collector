@@ -21,6 +21,11 @@ function(apply_target_to_executable_names)
           set_target_properties(${target} PROPERTIES OUTPUT_NAME "${target}.${CMAKE_SYSTEM_PROCESSOR}")
       endif()
 
+      # Only strip in Release builds
+      if(CMAKE_BUILD_TYPE STREQUAL "Release")
+          add_custom_command(TARGET ${target} POST_BUILD
+          COMMAND ${CMAKE_STRIP} $<TARGET_FILE:${target}> COMMENT "Stripping ${target}")
+      endif()
   endforeach()
 endfunction()
 
