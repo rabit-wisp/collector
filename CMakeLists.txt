@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(wireless-stats LANGUAGES CXX)
+project(telemetry LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -36,7 +36,7 @@ pkg_check_modules(ZLIB REQUIRED zlib)
 pkg_check_modules(LIBNL REQUIRED libnl-3.0)
 
 # Targets
-add_executable(wireless-stats src/main.cpp
+add_executable(wireless-stats src/wireless-stats.cpp
                               src/output.cpp
                               src/station.cpp
                               src/ppp.cpp
