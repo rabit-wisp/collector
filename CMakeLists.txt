@@ -67,6 +67,9 @@ set(LIBNL_INCLUDE_DIRS "${CMAKE_SYSROOT}/usr/include/libnl3")
 set(LIBNL_LIBRARIES "-lnl-3 -lnl-genl-3")
 
 
+add_executable(zmq-proxy src/zmq-proxy.cpp)
+target_include_directories(zmq-proxy PRIVATE ${DOCOPT_INCLUDE_DIRS} ${ZMQ_INCLUDE_DIRS})
+target_link_libraries(zmq-proxy PRIVATE libzmq-static docopt_s)
 
 add_executable(wireless-stats src/wireless-stats.cpp
                               src/output.cpp
