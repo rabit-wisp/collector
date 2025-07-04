@@ -74,5 +74,4 @@ target_link_libraries(wireless-stats PRIVATE
                                              docopt_s
 )
 
-set_target_properties(wireless-stats PROPERTIES OUTPUT_NAME "${CMAKE_PROJECT_NAME}.${CMAKE_SYSTEM_PROCESSOR}")
 apply_target_to_executable_names()
