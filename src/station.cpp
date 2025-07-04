@@ -19,6 +19,10 @@ static std::string mac_addr_n2a(const unsigned char *mac) {
                        mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 }
 
+static std::string mac_addr_n2a(const std::array<uint8_t, 8>& mac) {
+    return mac_addr_n2a(mac.data());
+}
+
 static std::string power_mode_to_string(uint32_t pm) {
     switch (pm) {
         case NL80211_MESH_POWER_ACTIVE: return "ACTIVE";
@@ -353,7 +357,8 @@ static int station_dump_handler(struct nl_msg *msg, void *arg) {
 
     // Get MAC address and interface
     if (tb[NL80211_ATTR_MAC]) {
-        station.mac_address = mac_addr_n2a((unsigned char*)nla_data(tb[NL80211_ATTR_MAC]));
+        // TODO: this is a bug in unreviewed code
+        //station.mac_address = mac_addr_n2a((unsigned char*)nla_data(tb[NL80211_ATTR_MAC]));
     }
     
     if (tb[NL80211_ATTR_IFINDEX]) {
@@ -586,6 +591,8 @@ const StationInfo wifi_station_dump(const std::string& interface, MacAddress  ma
     int ret = -1;
     int family_id;
     StationInfo station;
+
+    station.mac_address = mac_addr_n2a(mac_bytes);
 
     // Create netlink socket
     sock = nl_socket_alloc();
