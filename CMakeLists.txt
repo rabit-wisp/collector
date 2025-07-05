@@ -74,6 +74,7 @@ target_link_libraries(zmq-proxy PRIVATE libzmq-static docopt_s)
 add_executable(wireless-stats src/wireless-stats.cpp
                               src/output.cpp
                               src/station.cpp
+                              src/ping.cpp
                               src/ppp.cpp
                               src/survey.cpp)
 
