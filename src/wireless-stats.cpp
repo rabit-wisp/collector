@@ -56,6 +56,15 @@ int main(int argc, const char* argv[]) {
     int interval       = std::stoi(args.at("--interval").asString());
     int count          = std::stoi(args.at("--count").asString());
     bool compress      = !args.at("--no-compress").asBool();
+    int ping_frequency = std::stoi(args.at("--ping-frequency").asString());
+    std::vector<std::string> hosts;
+    if (args.at("--ping-hosts")) {
+        auto ping_hosts = args.at("--ping-hosts").asString();
+        for (auto&& part : std::views::split(ping_hosts, ',')) {
+            hosts.emplace_back(part.begin(), part.end());
+        }
+
+    }
 
     char buf[256]{};
     std::string hostname = ::gethostname(buf, sizeof(buf)) == 0 ? std::string(buf) : std::string{};
@@ -87,6 +96,8 @@ int main(int argc, const char* argv[]) {
         writer = DataWriter::create_zmq(endpoint, should_bind, hostname_tag? hostname : "");
     }
 
+    ping::start_ping_monitoring(hosts, ping_frequency);
+
     writer->set_compression(compress);
 
     auto dump_and_send = [&]() {
@@ -95,6 +106,7 @@ int main(int argc, const char* argv[]) {
         auto pppoe = pppoe_dump_json();
         auto survey = wifi_survey_dump_json(ifname);
         auto stations = wifi_stations_dump_json(ifname);
+        auto ping_stats = ping::ping_stats_dump_json();
 
         // Build JSON message
         std::ostringstream o;
@@ -103,6 +115,7 @@ int main(int argc, const char* argv[]) {
           << ", \"pppoe\": " << pppoe
           << ", \"wireless\": " << survey
           << ", \"stations\": " << stations
+          << ", \"ping\": " << ping_stats
           << "}" << std::endl;
 
         // Send via configured transport
@@ -118,6 +131,8 @@ int main(int argc, const char* argv[]) {
             std::this_thread::sleep_for(std::chrono::milliseconds(interval));
 
     } while( count == 0 || --count > 0);
+
+    ping::stop_ping_monitoring();
 
     std::this_thread::sleep_for(std::chrono::milliseconds(100)); // wait a bit so network buffers get a chance to flush out
 
