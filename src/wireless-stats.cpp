@@ -13,6 +13,7 @@
 #include <string>
 #include <iostream>
 #include <iomanip>
+#include <ranges>
 
 #include <docopt.h>
 
@@ -20,7 +21,7 @@
 #include "station.h"
 #include "survey.h"
 #include "ppp.h"
-
+#include "ping.h"
 
 static const char USAGE[] =  R"(wireless-stats
 Usage:
@@ -31,18 +32,20 @@ Usage:
   wireless-stats <interface> --stderr [options]
 
 Options:
-  --stdout               output to stdout
-  --stderr               output to stdout
-  --udp                  send over udp
-  --tcp                  send over tcp
-  --zmq                  send over zmq
-  --dest-ip=<ip>         Destination IPv4 address.
-  --dest-port=<port>     Destination UDP port.
-  --endpoint=<endpoint>  zmq endpoint (e.g. tcp://*:8000)
-  --mode=<mode>          zmq connection mode [default: connect]
-  --interval=<sec>       milliseconds between samples [default: 1000].
-  --count=<count>        only do count number of polls [default: 0]
-  --no-compress          don't gzip content
+  --stdout                      output to stdout
+  --stderr                      output to stdout
+  --udp                         send over udp
+  --tcp                         send over tcp
+  --zmq                         send over zmq
+  --dest-ip=<ip>                Destination IPv4 address.
+  --dest-port=<port>            Destination UDP port.
+  --endpoint=<endpoint>         zmq endpoint (e.g. tcp://*:8000)
+  --mode=<mode>                 zmq connection mode [default: connect]
+  --interval=<msec>             milliseconds between samples [default: 1000].
+  --ping-hosts=<hosts>,...      list of hosts to get ping statistics on (leave empty to not ping)
+  --ping-frequency=<msec>       frequency of ping packets (in ms) [default: 1000]
+  --count=<count>               only do count number of polls [default: 0]
+  --no-compress                 don't gzip content
 )";
 
 
