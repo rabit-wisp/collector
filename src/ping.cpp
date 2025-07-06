@@ -329,7 +329,7 @@ namespace ping {
             }
         }
 
-        recv_thread = std::move(std::thread(receive_worker, milliseconds(frequency)));
+        recv_thread = std::move(std::thread(receive_worker, milliseconds(frequency * 3)));
         send_thread = std::move(std::thread(send_worker, milliseconds(frequency)));
     }
 
