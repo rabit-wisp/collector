@@ -28,12 +28,18 @@ using namespace std::chrono;
 
 namespace ping {
 
+    // forward declarations
+    struct Target;
+    std::string resolve_hostname(const std::string& hostname);
+
     typedef std::chrono::high_resolution_clock mainclock;
     typedef std::chrono::time_point<mainclock> timestamp;
 
     std::atomic<bool> running;
     std::thread send_thread;
     std::thread recv_thread;
+
+    std::map<in_addr_t, std::unique_ptr<Target>> targets;
 
     struct ICMPPacket {
         struct icmphdr header;
@@ -79,6 +85,32 @@ namespace ping {
         };
     };
 
+    struct Target {
+        std::string host;
+        std::mutex mutex;
+        uint16_t sequence_number;
+        int16_t last_ping;
+        timestamp last_sent;
+        struct sockaddr_in addr;
+
+        Target(const std::string& host_) : host(host_), last_ping(-1), sequence_number(0)
+        {
+            auto resolved = resolve_hostname(host);
+            if (resolved.empty())
+                throw std::runtime_error(fmt::format("Can't resolve hostname '{}'", host));
+
+            memset(&addr, 0, sizeof(addr));
+            addr.sin_family = AF_INET;
+            inet_pton(AF_INET, resolved.c_str(), &addr.sin_addr);
+        }
+
+        std::string dump_json()
+        {
+            return fmt::format("{}", last_ping);
+        }
+    };
+
+    // helper functions
 
     std::string resolve_hostname(const std::string& hostname) {
 
@@ -117,31 +149,7 @@ namespace ping {
         return ~sum;
     }
 
-
-    struct Target {
-        std::string host;
-        std::mutex mutex;
-        uint16_t sequence_number;
-        int16_t last_ping;
-        timestamp last_sent;
-        struct sockaddr_in addr;
-
-        Target(const std::string& host_) : host(host_), last_ping(-1), sequence_number(0)
-        {
-            auto resolved = resolve_hostname(host);
-            if (resolved.empty())
-                throw std::runtime_error(fmt::format("Can't resolve hostname '{}'", host));
-
-            memset(&addr, 0, sizeof(addr));
-            addr.sin_family = AF_INET;
-            inet_pton(AF_INET, resolved.c_str(), &addr.sin_addr);
-        }
-
-        std::string dump_json()
-        {
-            return fmt::format("{}", last_ping);
-        }
-    };
+    // ping sending functions
 
     void send_ping(int sock_fd, struct ICMPPacket& packet, struct sockaddr_in& dest_addr) {
 
@@ -162,8 +170,6 @@ namespace ping {
         else if (len < sizeof(packet))
             std::cerr << "unable to send ping payload (buffer too big)" << std::endl;
     }
-
-    std::map<in_addr_t, std::unique_ptr<Target>> targets;
 
     void send_worker(milliseconds frequency) {
 
@@ -211,9 +217,9 @@ namespace ping {
         } while (running.load());
     }
 
+    // ping receiver functions
 
-    std::optional<std::tuple<in_addr_t, int16_t, timestamp>> ping_receive(int sock_fd)
-    {
+    std::optional<std::tuple<in_addr_t, int16_t, timestamp>> ping_receive(int sock_fd) {
         char recv_buffer[1500];
         struct sockaddr_in recv_addr;
         socklen_t addr_len = sizeof(recv_addr);
@@ -264,7 +270,6 @@ namespace ping {
         }
     }
 
-
     void receive_worker(milliseconds timeout){
 
         sock_wrap socket(timeout);
@@ -299,6 +304,8 @@ namespace ping {
 
         }
     }
+
+    // external interface facilities
 
     const std::string ping_stats_dump_json(){
 
