@@ -10,14 +10,14 @@ static const char USAGE[] =
 R"(ZMQ Pub/Sub Proxy.
 
 Usage:
-  zmq-proxy --sub=SUBSCRIBER --pub=PUBLISHER [--sub-method=(bind|connect)] [--pub-method=(bind|connect)]
-  zmq-proxy --stdin --pub=PUBLISHER [--pub-method=(bind|connect)]
-  zmq-proxy --sub=SUBSCRIBER (--stdout|--stderr) [--subscriptions=TAG1,TAG2,...] [--sub-method=(bind|connect)]
+  zmq-proxy (--sub=SUBSCRIBER...) (--pub=PUBLISHER...) [--sub-method=(bind|connect)] [--pub-method=(bind|connect)]
+  zmq-proxy --stdin --pub=PUBLISHER... [--pub-method=(bind|connect)]
+  zmq-proxy --sub=SUBSCRIBER... (--stdout|--stderr) [--subscriptions=TAG1,TAG2,...] [--sub-method=(bind|connect)]
 
 Options:
-  --pub=SUBSCRIBER               Publisher endpoint (e.g., tcp://*:5555, pipe://stdout).
+  --pub=SUBSCRIBER...            Publisher endpoint (e.g., tcp://*:5555, pipe://stdout).
   --pub-method=(bind|connect)    Publisher endpoint connection method [Default: bind]
-  --sub=PUBLISHER                Subscriber endpoint (e.g., tcp://*:5556).
+  --sub=PUBLISHER...             Subscriber endpoint (e.g., tcp://*:5556).
   --sub-method=(bind|connect)    Subscriber endpoint connection method [Default: bind]
   --stdin                        Take input from stdin and send over publisher endpoint
   --stdout                       Output subscriber data to stdout
