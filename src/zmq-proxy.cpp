@@ -58,8 +58,6 @@ void stream_in_handler(void* ctx, const std::vector<std::string>& endpoints, zmq
             zmq_send(socket, "", 0, 0);  ///< Final empty frame.
         } else {
 
-            std::cout << "sending: -" << buffer << "-" << std::endl;
-
             zmq_send(socket, buffer.data(), buffer.size(), ZMQ_SNDMORE);
 
         }
@@ -82,7 +80,6 @@ void stream_out_handler(void* ctx,
     void* socket = zmq_socket(ctx, ZMQ_SUB);
     connect_endpoint(socket, method, endpoints);
 
-    std::cout << subscriptions.empty() << "?" << std::endl;
     if (subscriptions.empty())
         zmq_setsockopt(socket, ZMQ_SUBSCRIBE, "", 0);
     else
