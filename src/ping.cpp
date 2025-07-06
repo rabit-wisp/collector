@@ -152,9 +152,13 @@ namespace ping {
                              (struct sockaddr*)&dest_addr,
                              sizeof(dest_addr));
 
-        if (len < 0)
+        if (len == -1)
+            throw sock_wrap::failed_connection();
+        else if (len < 0)
+        {
             std::cerr << "unable to send ping payload (err " << errno
                       << " - " << std::strerror(errno) << ")" << std::endl;
+        }
         else if (len < sizeof(packet))
             std::cerr << "unable to send ping payload (buffer too big)" << std::endl;
     }
@@ -211,7 +215,10 @@ namespace ping {
                                (struct sockaddr*)&recv_addr,
                                &addr_len);
 
-        if (len < 0) {
+        if (len == -1)
+            throw sock_wrap::failed_connection();
+        else if (len < 0)
+        {
             std::cerr << "recvfrom failed (" << errno << " " << std::strerror(errno) << ")" << std::endl;
             return std::nullopt;
         }
