@@ -186,18 +186,28 @@ namespace ping {
 
         do
         {
-            for (const auto& [k, v] : targets )// | std::views::values ) {
-            {
+            try {
+
+                for (const auto& [k, v] : targets )// | std::views::values ) {
                 {
-                    const std::lock_guard<std::mutex> lock(v->mutex);
-                    packet.header.un.echo.sequence = ++(v->sequence_number);
-                    packet.header.checksum = 0; // reset to 0 to not poison our own checksum!
-                    packet.header.checksum = calculate_checksum(&packet, sizeof(packet));
-                    v->last_sent = mainclock::now();
+                    {
+                        const std::lock_guard<std::mutex> lock(v->mutex);
+                        packet.header.un.echo.sequence = ++(v->sequence_number);
+                        packet.header.checksum = 0; // reset to 0 to not poison our own checksum!
+                        packet.header.checksum = calculate_checksum(&packet, sizeof(packet));
+                        v->last_sent = mainclock::now();
+                    }
+                    send_ping(socket.sock_fd, packet, v->addr);
                 }
-                send_ping(socket.sock_fd, packet, v->addr);
+
+                std::this_thread::sleep_for(frequency);
+
+            } catch (sock_wrap::failed_connection) {
+
+                std::cerr << "reconnecting send socket" << std::endl;
+                socket.reconnect();
+                std::this_thread::sleep_for(milliseconds(1000));
             }
-            std::this_thread::sleep_for(frequency);
         } while (running.load());
     }
 
