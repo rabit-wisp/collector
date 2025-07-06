@@ -270,26 +270,33 @@ namespace ping {
         sock_wrap socket(timeout);
         while(running.load())
         {
-            auto res = ping_receive(socket.sock_fd);
+            try {
+                auto res = ping_receive(socket.sock_fd);
 
-            if(res)
-            {
-                auto [addr, sequence, received] = *res;
-
-                if( targets.contains(addr) )
+                if(res)
                 {
-                    auto& target = targets[addr];
-                    const std::lock_guard<std::mutex> lock(target->mutex);
+                    auto [addr, sequence, received] = *res;
 
-                    if(target->sequence_number == sequence){
-                        target->last_ping = duration_cast<milliseconds>(received - target->last_sent).count();
-                        //std::cout << "received echo reply for " << target->host
-                        //<< " " << sequence << std::endl;
+                    if( targets.contains(addr) )
+                    {
+                        auto& target = targets[addr];
+                        const std::lock_guard<std::mutex> lock(target->mutex);
+
+                        if(target->sequence_number == sequence){
+                            target->last_ping = duration_cast<milliseconds>(received - target->last_sent).count();
+                        }
                     }
                 }
-            }
-            else
+                else
+                    std::this_thread::sleep_for(milliseconds(10)); // rate limit failures
+
+            } catch (sock_wrap::failed_connection& e) {
+                std::cerr << e.what() << std::endl;
+                std::cerr << "reconnecting receive socket" << std::endl;
+                socket.reconnect();
                 std::this_thread::sleep_for(milliseconds(1000));
+            }
+
         }
     }
 
