@@ -2,6 +2,7 @@
 #include <dirent.h>
 #include <algorithm>
 #include <numeric>
+#include <array>
 #include <filesystem>
 
 #include <iostream>
