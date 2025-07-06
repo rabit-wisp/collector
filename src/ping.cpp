@@ -41,9 +41,20 @@ namespace ping {
     };
 
     struct sock_wrap {
-        int sock_fd;
+        int sock_fd = -1;
+        milliseconds timeout;
 
-        sock_wrap(milliseconds timeout) {
+        sock_wrap(milliseconds timeout_) : timeout(timeout_) {
+            reconnect();
+        }
+
+        ~sock_wrap() { close(sock_fd); }
+
+        void reconnect() {
+
+            if(sock_fd >= 0)
+                close(sock_fd);
+
             sock_fd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
             if (sock_fd < 0) {
                 throw std::runtime_error(fmt::format("failed to create socket ({}: {}).",
@@ -58,7 +69,14 @@ namespace ping {
             setsockopt(sock_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout_, sizeof(timeout_));
         }
 
-        ~sock_wrap() { close(sock_fd); }
+        struct failed_connection : std::exception {
+            std::string msg;
+            failed_connection() {
+                msg = fmt::format("recvfrom failed ({} {})", errno, std::strerror(errno));
+            }
+
+            const char* what() const noexcept override { return msg.c_str(); };
+        };
     };
 
 
