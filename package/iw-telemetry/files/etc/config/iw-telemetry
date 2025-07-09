@@ -3,8 +3,8 @@ config wifi-device 'wlan0'
 	option output_type 'zmq'
 	list endpoint 'tcp://10.1.0.1:9999'
 	option mode 'connect'
-  list ping_hosts '1.1.1.1'
-  list ping_hosts '10.1.0.1'
+	list ping_hosts '1.1.1.1'
+	list ping_hosts '10.1.0.1'
 
 
 # config wifi-device 'wlan1'
