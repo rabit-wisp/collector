@@ -102,6 +102,7 @@ jobs:
 
 
       - name: Compress artifacts
+        shell: bash
         run: |
           for i in artifacts/*
           do
