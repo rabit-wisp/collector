@@ -26,7 +26,7 @@ Maintainer: memetb@gmail.com
 Description: Wireless Telemetry user interface
 Priority: optional
 Section: utils
-Depends: $name luci
+Depends: $name luci-base
 EOF
 
 cat $temp_dir/control/control
