@@ -61,6 +61,8 @@ Options:
 ]
 ```
 
+See [here](static-assets/sample-data.json) for full dump. It is verbose.
+
 ## Example telegraf ingest
 
 ```
@@ -207,6 +209,8 @@ Options:
       tx_bytes                = "txq_stats/tx_bytes"
       tx_packets              = "txq_stats/tx_packets"
 ```
+
+
 
 ## Development and building locally
 

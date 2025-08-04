@@ -1,0 +1,1714 @@
+{
+  "hostname": "radio-001",
+  "sent": 1751122539.375,
+  "pppoe": [],
+  "wireless": {
+    "5180": {
+      "active": true,
+      "noise": -103,
+      "time": {
+        "total": 326271099,
+        "busy": 91674569,
+        "ext_busy": 0,
+        "rx": 15745543,
+        "tx": 20066704
+      }
+    },
+    "5200": {
+      "active": false,
+      "noise": -103,
+      "time": {
+        "total": 146,
+        "busy": 17,
+        "ext_busy": 0,
+        "rx": 0,
+        "tx": 0
+      }
+    },
+    "5220": {
+      "active": false,
+      "noise": null,
+      "time": {
+        "total": 0,
+        "busy": 0,
+        "ext_busy": 0,
+        "rx": 0,
+        "tx": 0
+      }
+    },
+    "5240": {
+      "active": false,
+      "noise": null,
+      "time": {
+        "total": 0,
+        "busy": 0,
+        "ext_busy": 0,
+        "rx": 0,
+        "tx": 0
+      }
+    },
+    "5260": {
+      "active": false,
+      "noise": null,
+      "time": {
+        "total": 0,
+        "busy": 0,
+        "ext_busy": 0,
+        "rx": 0,
+        "tx": 0
+      }
+    },
+    "5280": {
+      "active": false,
+      "noise": null,
+      "time": {
+        "total": 0,
+        "busy": 0,
+        "ext_busy": 0,
+        "rx": 0,
+        "tx": 0
+      }
+    },
+    "5300": {
+      "active": false,
+      "noise": null,
+      "time": {
+        "total": 0,
+        "busy": 0,
+        "ext_busy": 0,
+        "rx": 0,
+        "tx": 0
+      }
+    },
+    "5320": {
+      "active": false,
+      "noise": null,
+      "time": {
+        "total": 0,
+        "busy": 0,
+        "ext_busy": 0,
+        "rx": 0,
+        "tx": 0
+      }
+    },
+    "5500": {
+      "active": false,
+      "noise": null,
+      "time": {
+        "total": 0,
+        "busy": 0,
+        "ext_busy": 0,
+        "rx": 0,
+        "tx": 0
+      }
+    },
+    "5520": {
+      "active": false,
+      "noise": null,
+      "time": {
+        "total": 0,
+        "busy": 0,
+        "ext_busy": 0,
+        "rx": 0,
+        "tx": 0
+      }
+    },
+    "5540": {
+      "active": false,
+      "noise": null,
+      "time": {
+        "total": 0,
+        "busy": 0,
+        "ext_busy": 0,
+        "rx": 0,
+        "tx": 0
+      }
+    },
+    "5560": {
+      "active": false,
+      "noise": null,
+      "time": {
+        "total": 0,
+        "busy": 0,
+        "ext_busy": 0,
+        "rx": 0,
+        "tx": 0
+      }
+    },
+    "5580": {
+      "active": false,
+      "noise": null,
+      "time": {
+        "total": 0,
+        "busy": 0,
+        "ext_busy": 0,
+        "rx": 0,
+        "tx": 0
+      }
+    },
+    "5600": {
+      "active": false,
+      "noise": -106,
+      "time": {
+        "total": 146,
+        "busy": 21,
+        "ext_busy": 0,
+        "rx": 0,
+        "tx": 0
+      }
+    },
+    "5620": {
+      "active": false,
+      "noise": -107,
+      "time": {
+        "total": 146,
+        "busy": 0,
+        "ext_busy": 0,
+        "rx": 0,
+        "tx": 0
+      }
+    },
+    "5640": {
+      "active": false,
+      "noise": -106,
+      "time": {
+        "total": 863923,
+        "busy": 100351,
+        "ext_busy": 0,
+        "rx": 18647,
+        "tx": 25100
+      }
+    },
+    "5660": {
+      "active": false,
+      "noise": null,
+      "time": {
+        "total": 0,
+        "busy": 0,
+        "ext_busy": 0,
+        "rx": 0,
+        "tx": 0
+      }
+    },
+    "5680": {
+      "active": false,
+      "noise": null,
+      "time": {
+        "total": 0,
+        "busy": 0,
+        "ext_busy": 0,
+        "rx": 0,
+        "tx": 0
+      }
+    },
+    "5700": {
+      "active": false,
+      "noise": -107,
+      "time": {
+        "total": 146,
+        "busy": 25,
+        "ext_busy": 0,
+        "rx": 0,
+        "tx": 0
+      }
+    }
+  },
+  "stations": [
+    {
+      "mac_address": "aa:bb:cc:dd:51:12",
+      "interface": "wlan0",
+      "current_time_ms": 1751122539395,
+      "inactive_time_ms": 580,
+      "rx_bytes": 9507621,
+      "rx_packets": 16864,
+      "tx_bytes": 2870780,
+      "tx_packets": 18554,
+      "tx_retries": 6812,
+      "tx_failed": 0,
+      "rx_drop_misc": 632,
+      "signal_dbm": -78,
+      "signal_avg_dbm": -78,
+      "tx_duration_us": 645285,
+      "rx_duration_us": 4859984,
+      "last_ack_signal_dbm": -95,
+      "avg_ack_signal_dbm": -95,
+      "airtime_weight": 256,
+      "connected_time_sec": 17473,
+      "assoc_at_boottime_us": 322103420423561,
+      "assoc_at_ms": 18446727699851862000,
+      "tx_bitrate": {
+        "rate_mbps_x10": 540,
+        "vht_mcs": 3,
+        "vht_nss": 1,
+        "short_gi": false,
+        "width_40mhz": true,
+        "width_80mhz": false,
+        "width_80p80mhz": false,
+        "width_160mhz": false,
+        "width_320mhz": false,
+        "width_1mhz": false,
+        "width_2mhz": false,
+        "width_4mhz": false,
+        "width_8mhz": false,
+        "width_16mhz": false
+      },
+      "rx_bitrate": {
+        "rate_mbps_x10": 217,
+        "vht_mcs": 2,
+        "vht_nss": 1,
+        "short_gi": true,
+        "width_40mhz": false,
+        "width_80mhz": false,
+        "width_80p80mhz": false,
+        "width_160mhz": false,
+        "width_320mhz": false,
+        "width_1mhz": false,
+        "width_2mhz": false,
+        "width_4mhz": false,
+        "width_8mhz": false,
+        "width_16mhz": false
+      },
+      "flags": {
+        "authorized": true,
+        "authenticated": true,
+        "associated": true,
+        "short_preamble": false,
+        "wmm_wme": true,
+        "mfp": true,
+        "tdls_peer": false
+      },
+      "bss_param": {
+        "dtim_period": 2,
+        "beacon_interval": 100,
+        "short_slot_time": true
+      },
+      "tid_stats": [
+        {
+          "tid": 0,
+          "rx_msdu": 16508,
+          "tx_msdu": 18029,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 18029,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 2814584,
+            "tx_packets": 18029
+          }
+        },
+        {
+          "tid": 1,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 2,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 3,
+          "rx_msdu": 300,
+          "tx_msdu": 478,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 478,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 51660,
+            "tx_packets": 478
+          }
+        },
+        {
+          "tid": 4,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 5,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 6,
+          "rx_msdu": 3,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 7,
+          "rx_msdu": 0,
+          "tx_msdu": 23,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 23,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 3526,
+            "tx_packets": 23
+          }
+        },
+        {
+          "tid": 8,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 9,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 10,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 11,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 12,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 13,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 14,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 15,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 16,
+          "rx_msdu": 0,
+          "tx_msdu": 24,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0
+        }
+      ],
+      "chain_signal": [
+        -83,
+        -80
+      ],
+      "chain_signal_avg": [
+        -83,
+        -79
+      ]
+    },
+    {
+      "mac_address": "aa:bb:cc:dd:51:12",
+      "interface": "wlan0",
+      "current_time_ms": 1751122539408,
+      "inactive_time_ms": 600,
+      "rx_bytes": 9507621,
+      "rx_packets": 16864,
+      "tx_bytes": 2870780,
+      "tx_packets": 18554,
+      "tx_retries": 6812,
+      "tx_failed": 0,
+      "rx_drop_misc": 632,
+      "signal_dbm": -78,
+      "signal_avg_dbm": -78,
+      "tx_duration_us": 645285,
+      "rx_duration_us": 4859984,
+      "last_ack_signal_dbm": -95,
+      "avg_ack_signal_dbm": -95,
+      "airtime_weight": 256,
+      "connected_time_sec": 17473,
+      "assoc_at_boottime_us": 322103420423561,
+      "assoc_at_ms": 18446727699851862000,
+      "tx_bitrate": {
+        "rate_mbps_x10": 540,
+        "vht_mcs": 3,
+        "vht_nss": 1,
+        "short_gi": false,
+        "width_40mhz": true,
+        "width_80mhz": false,
+        "width_80p80mhz": false,
+        "width_160mhz": false,
+        "width_320mhz": false,
+        "width_1mhz": false,
+        "width_2mhz": false,
+        "width_4mhz": false,
+        "width_8mhz": false,
+        "width_16mhz": false
+      },
+      "rx_bitrate": {
+        "rate_mbps_x10": 217,
+        "vht_mcs": 2,
+        "vht_nss": 1,
+        "short_gi": true,
+        "width_40mhz": false,
+        "width_80mhz": false,
+        "width_80p80mhz": false,
+        "width_160mhz": false,
+        "width_320mhz": false,
+        "width_1mhz": false,
+        "width_2mhz": false,
+        "width_4mhz": false,
+        "width_8mhz": false,
+        "width_16mhz": false
+      },
+      "flags": {
+        "authorized": true,
+        "authenticated": true,
+        "associated": true,
+        "short_preamble": false,
+        "wmm_wme": true,
+        "mfp": true,
+        "tdls_peer": false
+      },
+      "bss_param": {
+        "dtim_period": 2,
+        "beacon_interval": 100,
+        "short_slot_time": true
+      },
+      "tid_stats": [
+        {
+          "tid": 0,
+          "rx_msdu": 16508,
+          "tx_msdu": 18029,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 18029,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 2814584,
+            "tx_packets": 18029
+          }
+        },
+        {
+          "tid": 1,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 2,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 3,
+          "rx_msdu": 300,
+          "tx_msdu": 478,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 478,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 51660,
+            "tx_packets": 478
+          }
+        },
+        {
+          "tid": 4,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 5,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 6,
+          "rx_msdu": 3,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 7,
+          "rx_msdu": 0,
+          "tx_msdu": 23,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 23,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 3526,
+            "tx_packets": 23
+          }
+        },
+        {
+          "tid": 8,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 9,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 10,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 11,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 12,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 13,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 14,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 15,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 16,
+          "rx_msdu": 0,
+          "tx_msdu": 24,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0
+        }
+      ],
+      "chain_signal": [
+        -83,
+        -80
+      ],
+      "chain_signal_avg": [
+        -83,
+        -79
+      ]
+    },
+    {
+      "mac_address": "aa:bb:cc:dd:51:12",
+      "interface": "wlan0",
+      "current_time_ms": 1751122539421,
+      "inactive_time_ms": 610,
+      "rx_bytes": 9507621,
+      "rx_packets": 16864,
+      "tx_bytes": 2870780,
+      "tx_packets": 18554,
+      "tx_retries": 6812,
+      "tx_failed": 0,
+      "rx_drop_misc": 632,
+      "signal_dbm": -78,
+      "signal_avg_dbm": -78,
+      "tx_duration_us": 645285,
+      "rx_duration_us": 4859984,
+      "last_ack_signal_dbm": -95,
+      "avg_ack_signal_dbm": -95,
+      "airtime_weight": 256,
+      "connected_time_sec": 17473,
+      "assoc_at_boottime_us": 322103420423561,
+      "assoc_at_ms": 18446727699851862000,
+      "tx_bitrate": {
+        "rate_mbps_x10": 540,
+        "vht_mcs": 3,
+        "vht_nss": 1,
+        "short_gi": false,
+        "width_40mhz": true,
+        "width_80mhz": false,
+        "width_80p80mhz": false,
+        "width_160mhz": false,
+        "width_320mhz": false,
+        "width_1mhz": false,
+        "width_2mhz": false,
+        "width_4mhz": false,
+        "width_8mhz": false,
+        "width_16mhz": false
+      },
+      "rx_bitrate": {
+        "rate_mbps_x10": 217,
+        "vht_mcs": 2,
+        "vht_nss": 1,
+        "short_gi": true,
+        "width_40mhz": false,
+        "width_80mhz": false,
+        "width_80p80mhz": false,
+        "width_160mhz": false,
+        "width_320mhz": false,
+        "width_1mhz": false,
+        "width_2mhz": false,
+        "width_4mhz": false,
+        "width_8mhz": false,
+        "width_16mhz": false
+      },
+      "flags": {
+        "authorized": true,
+        "authenticated": true,
+        "associated": true,
+        "short_preamble": false,
+        "wmm_wme": true,
+        "mfp": true,
+        "tdls_peer": false
+      },
+      "bss_param": {
+        "dtim_period": 2,
+        "beacon_interval": 100,
+        "short_slot_time": true
+      },
+      "tid_stats": [
+        {
+          "tid": 0,
+          "rx_msdu": 16508,
+          "tx_msdu": 18029,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 18029,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 2814584,
+            "tx_packets": 18029
+          }
+        },
+        {
+          "tid": 1,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 2,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 3,
+          "rx_msdu": 300,
+          "tx_msdu": 478,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 478,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 51660,
+            "tx_packets": 478
+          }
+        },
+        {
+          "tid": 4,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 5,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 6,
+          "rx_msdu": 3,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 7,
+          "rx_msdu": 0,
+          "tx_msdu": 23,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 23,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 3526,
+            "tx_packets": 23
+          }
+        },
+        {
+          "tid": 8,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 9,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 10,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 11,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 12,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 13,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 14,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 15,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 16,
+          "rx_msdu": 0,
+          "tx_msdu": 24,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0
+        }
+      ],
+      "chain_signal": [
+        -83,
+        -80
+      ],
+      "chain_signal_avg": [
+        -83,
+        -79
+      ]
+    },
+    {
+      "mac_address": "aa:bb:cc:dd:51:12",
+      "interface": "wlan0",
+      "current_time_ms": 1751122539435,
+      "inactive_time_ms": 620,
+      "rx_bytes": 9507621,
+      "rx_packets": 16864,
+      "tx_bytes": 2870780,
+      "tx_packets": 18554,
+      "tx_retries": 6812,
+      "tx_failed": 0,
+      "rx_drop_misc": 632,
+      "signal_dbm": -78,
+      "signal_avg_dbm": -78,
+      "tx_duration_us": 645285,
+      "rx_duration_us": 4859984,
+      "last_ack_signal_dbm": -95,
+      "avg_ack_signal_dbm": -95,
+      "airtime_weight": 256,
+      "connected_time_sec": 17473,
+      "assoc_at_boottime_us": 322103420423561,
+      "assoc_at_ms": 18446727699851862000,
+      "tx_bitrate": {
+        "rate_mbps_x10": 540,
+        "vht_mcs": 3,
+        "vht_nss": 1,
+        "short_gi": false,
+        "width_40mhz": true,
+        "width_80mhz": false,
+        "width_80p80mhz": false,
+        "width_160mhz": false,
+        "width_320mhz": false,
+        "width_1mhz": false,
+        "width_2mhz": false,
+        "width_4mhz": false,
+        "width_8mhz": false,
+        "width_16mhz": false
+      },
+      "rx_bitrate": {
+        "rate_mbps_x10": 217,
+        "vht_mcs": 2,
+        "vht_nss": 1,
+        "short_gi": true,
+        "width_40mhz": false,
+        "width_80mhz": false,
+        "width_80p80mhz": false,
+        "width_160mhz": false,
+        "width_320mhz": false,
+        "width_1mhz": false,
+        "width_2mhz": false,
+        "width_4mhz": false,
+        "width_8mhz": false,
+        "width_16mhz": false
+      },
+      "flags": {
+        "authorized": true,
+        "authenticated": true,
+        "associated": true,
+        "short_preamble": false,
+        "wmm_wme": true,
+        "mfp": true,
+        "tdls_peer": false
+      },
+      "bss_param": {
+        "dtim_period": 2,
+        "beacon_interval": 100,
+        "short_slot_time": true
+      },
+      "tid_stats": [
+        {
+          "tid": 0,
+          "rx_msdu": 16508,
+          "tx_msdu": 18029,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 18029,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 2814584,
+            "tx_packets": 18029
+          }
+        },
+        {
+          "tid": 1,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 2,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 3,
+          "rx_msdu": 300,
+          "tx_msdu": 478,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 478,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 51660,
+            "tx_packets": 478
+          }
+        },
+        {
+          "tid": 4,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 5,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 6,
+          "rx_msdu": 3,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 7,
+          "rx_msdu": 0,
+          "tx_msdu": 23,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 23,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 3526,
+            "tx_packets": 23
+          }
+        },
+        {
+          "tid": 8,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 9,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 10,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 11,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 12,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 13,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 14,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 15,
+          "rx_msdu": 0,
+          "tx_msdu": 0,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0,
+          "txq_stats": {
+            "backlog_bytes": 0,
+            "backlog_packets": 0,
+            "flows": 0,
+            "drops": 0,
+            "ecn_marks": 0,
+            "overlimit": 0,
+            "collisions": 0,
+            "tx_bytes": 0,
+            "tx_packets": 0
+          }
+        },
+        {
+          "tid": 16,
+          "rx_msdu": 0,
+          "tx_msdu": 24,
+          "tx_msdu_retries": 0,
+          "tx_msdu_failed": 0
+        }
+      ],
+      "chain_signal": [
+        -83,
+        -80
+      ],
+      "chain_signal_avg": [
+        -83,
+        -79
+      ]
+    }
+  ]
+}
