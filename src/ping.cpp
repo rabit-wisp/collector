@@ -12,6 +12,8 @@
 #include <algorithm>
 #include <experimental/iterator>
 
+#include "ping.h"
+
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>
 #include <fmt/ranges.h>
@@ -317,8 +319,8 @@ namespace ping {
         return fmt::format("{{{}}}", fmt::join(entries, ", "));
     }
 
-    void start_ping_monitoring(const std::vector<std::string>& hosts, int frequency) {
-
+    void start_ping_monitoring(const std::vector<std::string>& hosts, std::chrono::milliseconds frequency)
+    {
         if (hosts.empty())
             return;
 
@@ -336,8 +338,8 @@ namespace ping {
             }
         }
 
-        recv_thread = std::move(std::thread(receive_worker, milliseconds(frequency * 3)));
-        send_thread = std::move(std::thread(send_worker, milliseconds(frequency)));
+        recv_thread = std::move(std::thread(receive_worker, frequency * 3));
+        send_thread = std::move(std::thread(send_worker, frequency));
     }
 
     void stop_ping_monitoring() {
