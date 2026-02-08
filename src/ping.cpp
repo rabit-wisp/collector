@@ -56,7 +56,11 @@ namespace ping {
             reconnect();
         }
 
-        ~sock_wrap() { close(sock_fd); }
+        ~sock_wrap() {
+            if (sock_fd >= 0)
+                close(sock_fd);
+        }
+
 
         void reconnect() {
 
@@ -73,7 +77,7 @@ namespace ping {
             // if we've already (roughly) sent the next ping request
             struct timeval timeout_;
             timeout_.tv_sec = int(timeout.count() / 1000);
-            timeout_.tv_usec = 0;
+            timeout_.tv_usec = (timeout.count() % 1000) * 1000;
             setsockopt(sock_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout_, sizeof(timeout_));
         }
 
@@ -113,9 +117,8 @@ namespace ping {
     };
 
     // helper functions
-
-    std::string resolve_hostname(const std::string& hostname) {
-
+    std::string resolve_hostname(const std::string& hostname)
+    {
         struct addrinfo *result;
         int status = getaddrinfo(hostname.c_str(), nullptr, nullptr, &result);
         if (status != 0) {
@@ -130,8 +133,8 @@ namespace ping {
         return std::string(ip_str);
     }
 
-    uint16_t calculate_checksum(void* data, int length) {
-
+    uint16_t calculate_checksum(void* data, int length)
+    {
         uint16_t* ptr = static_cast<uint16_t*>(data);
         uint32_t sum = 0;
 
@@ -153,8 +156,8 @@ namespace ping {
 
     // ping sending functions
 
-    void send_ping(int sock_fd, struct ICMPPacket& packet, struct sockaddr_in& dest_addr) {
-
+    void send_ping(int sock_fd, struct ICMPPacket& packet, struct sockaddr_in& dest_addr)
+    {
         ssize_t len = sendto(sock_fd,
                              &packet,
                              sizeof(packet),
@@ -173,8 +176,8 @@ namespace ping {
             std::cerr << "unable to send ping payload (buffer too big)" << std::endl;
     }
 
-    void send_worker(milliseconds frequency) {
-
+    void send_worker(std::chrono::milliseconds frequency)
+    {
         struct ICMPPacket packet;
         // prepare the payload for general usage, we will be updating sequence and checksums only
         memset(&packet, 0, sizeof(packet));
@@ -272,8 +275,8 @@ namespace ping {
         }
     }
 
-    void receive_worker(milliseconds timeout){
-
+    void receive_worker(milliseconds timeout)
+    {
         sock_wrap socket(timeout);
         while(running.load())
         {
@@ -308,13 +311,12 @@ namespace ping {
     }
 
     // external interface facilities
-
-    const std::string ping_stats_dump_json(){
-
+    const std::string ping_stats_dump_json()
+    {
         std::vector<std::string> entries;
 
-        for (const auto& [k, v] : targets) {
-            entries.push_back(fmt::format("\"{}\": {}", v->host, v->dump_json()));
+        for (const auto& [k, target] : targets) {
+            entries.push_back(fmt::format("\"{}\": {}", target->host, target->dump_json()));
         }
         return fmt::format("{{{}}}", fmt::join(entries, ", "));
     }
