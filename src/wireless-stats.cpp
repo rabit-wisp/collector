@@ -96,7 +96,7 @@ int main(int argc, const char* argv[]) {
         writer = DataWriter::create_zmq(endpoint, should_bind, hostname_tag? hostname : "");
     }
 
-    ping::start_ping_monitoring(hosts, ping_frequency);
+    ping::start_ping_monitoring(hosts, std::chrono::milliseconds(ping_frequency));
 
     writer->set_compression(compress);
 
