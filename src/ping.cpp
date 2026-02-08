@@ -283,11 +283,11 @@ namespace ping {
             try {
                 auto res = ping_receive(socket.sock_fd);
 
-                if(res)
+                if(res) // if res is set, then it exists in targets
                 {
                     auto [addr, sequence, received] = *res;
+                    auto& target = targets[addr];
 
-                    if( targets.contains(addr) )
                     {
                         auto& target = targets[addr];
                         const std::lock_guard<std::mutex> lock(target->mutex);
