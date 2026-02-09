@@ -30,7 +30,6 @@ using namespace std::chrono;
 
 namespace ping {
 
-    using milliseconds_d = std::chrono::duration<double, std::milli>;
     // forward declarations
     struct Target;
     std::string resolve_hostname(const std::string& hostname);
@@ -97,7 +96,7 @@ namespace ping {
         std::atomic<uint16_t> last_sent_seq;
         std::atomic<uint16_t> last_received_seq;
         std::atomic<timestamp> last_sent_time;
-        std::atomic<milliseconds_d> latency;
+        std::atomic<int16_t> latency; // we could go milliseconds_d, but we're really looking for single digit precision only
         std::atomic<bool> reachable;
 
         struct sockaddr_in addr;
@@ -119,7 +118,7 @@ namespace ping {
         std::string dump_json()
         {
             if(reachable.load())
-                return fmt::format("{:.1f}", latency.load().count());
+                return fmt::format("{:.1f}", float(latency.load()) / 10.0f);
             else
                 return "null";
         }
@@ -380,7 +379,7 @@ namespace ping {
                     {
                         // Calculate latency
                         const timestamp sent_time = target->last_sent_time.load(std::memory_order_relaxed);
-                        const milliseconds_d latency = duration_cast<milliseconds_d>(received - sent_time);
+                        const int16_t latency = duration_cast<microseconds>(received - sent_time).count() / 100;
 
                         target->last_received_seq.store(sequence, std::memory_order_release);
                         target->latency.store(latency, std::memory_order_relaxed);

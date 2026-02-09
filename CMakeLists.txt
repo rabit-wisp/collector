@@ -36,10 +36,10 @@ target_include_directories(iw-telemetry PRIVATE
                                           ${DOCOPT_INCLUDE_DIRS}
                                           ${LIBNL_INCLUDE_DIRS})
 
-target_link_libraries(iw-telemetry PRIVATE
-                                     nl-3
-                                     nl-genl-3
-                                     ${ZMQ_LIBRARIES}
-                                     ${ZLIB_LIBRARIES}
-                                     ${LIBNL_LIBRARIES}
-                                     docopt_s)
+target_link_libraries(iw-telemetry PRIVATE atomic
+                                           nl-3
+                                           nl-genl-3
+                                           ${ZMQ_LIBRARIES}
+                                           ${ZLIB_LIBRARIES}
+                                           ${LIBNL_LIBRARIES}
+                                           docopt_s)
