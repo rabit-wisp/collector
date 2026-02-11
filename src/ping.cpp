@@ -5,6 +5,7 @@
 #include <fstream>
 #include <vector>
 #include <optional>
+#include <expected>
 #include <map>
 #include <mutex>
 #include <atomic>
@@ -29,6 +30,15 @@
 using namespace std::chrono;
 
 namespace ping {
+
+    enum class IcmpResponse {
+        ignore,      // otherwise valid ICMP packet that simply isn't our or is stale
+        invalid,     // invalid payload (too small, too big, can't be safely interpreted)
+        unreachable, // OS told us the target is unreachable
+        timeout,     // the socket timed out
+        socket_error // the socket failed
+    };
+
 
     // forward declarations
     struct Target;
@@ -101,15 +111,11 @@ namespace ping {
 
         struct sockaddr_in addr;
 
-        Target(const std::string& host) : host(host),
-                                          last_sent_seq(0),
-                                          last_received_seq(0),
-                                          reachable(false)
+        Target(const std::string& host, const std::string& resolved) : host(host),
+                                                                       last_sent_seq(0),
+                                                                       last_received_seq(0),
+                                                                       reachable(false)
         {
-            auto resolved = resolve_hostname(host);
-            if (resolved.empty())
-                throw std::runtime_error(fmt::format("Can't resolve hostname '{}'", host));
-
             memset(&addr, 0, sizeof(addr));
             addr.sin_family = AF_INET;
             inet_pton(AF_INET, resolved.c_str(), &addr.sin_addr);
@@ -420,14 +426,14 @@ namespace ping {
 
         for(auto& host : hosts)
         {
-            try {
-                auto target = std::make_unique<Target>(host);
-                targets.insert({target->addr.sin_addr.s_addr, std::move(target)});
-
-            } catch (std::exception& e) {
-                std::cerr << "unable to run ping on '" << host
-                          << "' - error: " << e.what() << std::endl;
+            auto resolved = resolve_hostname(host);
+            if (resolved.empty())
+            {
+                fmt::print("Can't resolve hostname '{}' - ignoring", host);
+                continue;
             }
+            auto target = std::make_unique<Target>(host, resolved);
+            targets.insert({target->addr.sin_addr.s_addr, std::move(target)});
         }
 
         recv_thread = std::move(std::thread(receive_worker, frequency * 3));
