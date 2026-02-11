@@ -276,6 +276,7 @@ namespace ping {
 
     std::expected<std::tuple<in_addr_t, int16_t, timestamp>, IcmpResponse> ping_receive(int sock_fd) noexcept
     {
+        static int16_t pid = getpid() & 0xFFFF;
         char recv_buffer[1500];
         struct sockaddr_in recv_addr;
         socklen_t addr_len = sizeof(recv_addr);
@@ -321,7 +322,7 @@ namespace ping {
 
         struct icmphdr* icmp_reply = (struct icmphdr*)(recv_buffer + ip_header_len);
 
-        if (icmp_reply->un.echo.id != (getpid() & 0xFFFF)) // not ours
+        if (icmp_reply->un.echo.id != pid) // not ours
             return std::unexpected(IcmpResponse::ignore);
 
         if (icmp_reply->type == ICMP_ECHOREPLY)
