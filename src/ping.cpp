@@ -102,18 +102,17 @@ namespace ping {
 
     struct Target {
         std::string host;
-        std::atomic<uint16_t> last_sent_seq;
-        std::atomic<uint16_t> last_received_seq;
-        std::atomic<timestamp> last_sent_time;
+        std::mutex lock;
+        uint16_t last_sent_seq;
+        uint16_t last_received_seq;
+        timestamp last_sent_time;
         std::atomic<int16_t> latency; // we could go milliseconds_d, but we're really looking for single digit precision only
-        std::atomic<bool> reachable;
 
         struct sockaddr_in addr;
 
         Target(const std::string& host, const std::string& resolved) : host(host),
                                                                        last_sent_seq(0),
-                                                                       last_received_seq(0),
-                                                                       reachable(false)
+                                                                       last_received_seq(0)
         {
             memset(&addr, 0, sizeof(addr));
             addr.sin_family = AF_INET;
@@ -122,10 +121,11 @@ namespace ping {
 
         std::string dump_json()
         {
-            if(reachable.load())
-                return fmt::format("{:.1f}", float(latency.load()) / 10.0f);
-            else
+            const auto l = latency.load();
+            if (l < 0)
                 return "null";
+            else
+                return fmt::format("{:.1f}", float(l) / 10.0f);
         }
     };
 
@@ -222,38 +222,36 @@ namespace ping {
             for (const auto& [k, target] : targets )
             {
                 const auto now = std::chrono::system_clock::now();
+                const std::lock_guard<std::mutex> lock(target->lock);
 
                 // only we write to last_sent, so there is no race here
-                uint16_t last_sent = target->last_sent_seq.load(std::memory_order_relaxed);
-                uint16_t last_received = target->last_received_seq.load(std::memory_order_relaxed);
+                uint16_t last_sent = target->last_sent_seq;
+                uint16_t last_received = target->last_received_seq;
 
                 // Check if we're waiting for a response
-                bool waiting_for_response = (last_sent != last_received);
-
-                if (waiting_for_response)
+                if (last_sent != last_received)
                 {
                     // Check if the outstanding ping has timed out
-                    timestamp last_sent_time = target->last_sent_time.load(std::memory_order_relaxed);
-                    auto elapsed = duration_cast<milliseconds>(now - last_sent_time);
+                    auto elapsed = duration_cast<milliseconds>(now - target->last_sent_time);
 
                     // Still waiting, skip this target
                     if (elapsed < timeout_threshold)
                         continue;
 
-                    target->reachable.store(false);
-                    //target->latency.store(ping::TIMEOUT_LATENCY, std::memory_order_release);
+                    target->last_sent_seq = 0;
+                    target->latency.store(-1);
                 }
 
                 // Send new ping
-                uint16_t new_seq = last_sent + 1;
+                uint16_t new_seq = target->last_sent_seq + 1;
 
                 packet.header.un.echo.sequence = htons(new_seq);
                 packet.header.checksum = 0;
                 packet.header.checksum = calculate_checksum(&packet, sizeof(packet));
 
                 // Update state before sending
-                target->last_sent_time.store(now, std::memory_order_relaxed);
-                target->last_sent_seq.store(new_seq, std::memory_order_release);
+                target->last_sent_time = now;
+                target->last_sent_seq  = new_seq;
 
                 auto res = send_ping(socket.sock_fd, packet, target->addr);
                 if(!res && res.error() == IcmpResponse::socket_error)
@@ -261,8 +259,9 @@ namespace ping {
                     std::cerr << "reconnecting send socket" << std::endl;
                     socket.reconnect();
                     std::this_thread::sleep_for(milliseconds(100));
-                } else if(!res && res.error() == IcmpResponse::timeout)
-                {
+
+                } else if(!res && res.error() == IcmpResponse::timeout) {
+
                     std::cerr << "send socket stalled (send buffer likely full)" << std::endl;
                     std::this_thread::sleep_for(milliseconds(100));
                 }
@@ -356,13 +355,17 @@ namespace ping {
 
             std::cerr << "ICMP error for " << target_it->second->host << ": " << error_msg << std::endl;
 
-            // Mark this ping as failed with special latency value
-            uint16_t expected_seq = target_it->second->last_sent_seq.load(std::memory_order_acquire);
-            if (expected_seq == sequence)
             {
-                target_it->second->last_received_seq.store(sequence, std::memory_order_release);
-                target_it->second->reachable.store(false);
+                const std::lock_guard<std::mutex> lock(target_it->second->lock);
 
+                // Mark this ping as failed with special latency value
+                if (target_it->second->last_sent_seq == sequence)
+                {
+                    // reset the sequence counter
+                    target_it->second->last_sent_seq = 0;
+                    target_it->second->last_received_seq = 0;
+                    target_it->second->latency.store(-1);
+                }
             }
 
             return std::unexpected(IcmpResponse::unreachable);
@@ -381,20 +384,18 @@ namespace ping {
             if(res) // if res is set, then it exists in targets
             {
                 auto [addr, sequence, received] = *res;
-                auto& target = targets[addr];
+                const auto& target = targets.find(addr)->second; // we know this will succeed because ping_receive() does it internally
+
+                const std::lock_guard<std::mutex> lock(target->lock);
 
                 // Check if this is the sequence we're waiting for
-                uint16_t expected_seq = target->last_sent_seq.load(std::memory_order_acquire);
-
-                if(expected_seq == sequence)
+                if(target->last_sent_seq == sequence)
                 {
                     // Calculate latency
-                    const timestamp sent_time = target->last_sent_time.load(std::memory_order_relaxed);
-                    const int16_t latency = duration_cast<microseconds>(received - sent_time).count() / 100;
+                    const int16_t latency = duration_cast<microseconds>(received - target->last_sent_time).count() / 100;
 
-                    target->last_received_seq.store(sequence, std::memory_order_release);
-                    target->latency.store(latency, std::memory_order_relaxed);
-                    target->reachable.store(true);
+                    target->last_received_seq = sequence;
+                    target->latency.store(latency);
                 }
                 // else -> ignore this as sequence is stale
             }
