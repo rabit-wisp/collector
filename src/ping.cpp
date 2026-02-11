@@ -170,7 +170,7 @@ namespace ping {
 
     // ping sending functions
 
-    void send_ping(int sock_fd, struct ICMPPacket& packet, struct sockaddr_in& dest_addr)
+    std::expected<void, IcmpResponse> send_ping(int sock_fd, struct ICMPPacket& packet, struct sockaddr_in& dest_addr) noexcept
     {
         ssize_t len = sendto(sock_fd,
                              &packet,
@@ -179,15 +179,22 @@ namespace ping {
                              (struct sockaddr*)&dest_addr,
                              sizeof(dest_addr));
 
-        if (len == -1)
-            throw sock_wrap::failed_connection();
-        else if (len < 0)
+        if (len < 0)
         {
+            if( errno == EAGAIN || errno == EWOULDBLOCK )
+                return std::unexpected(IcmpResponse::timeout);
+
             std::cerr << "unable to send ping payload (err " << errno
                       << " - " << std::strerror(errno) << ")" << std::endl;
+            return std::unexpected(IcmpResponse::socket_error);
         }
         else if (len < sizeof(packet))
-            std::cerr << "unable to send ping payload (buffer too big)" << std::endl;
+        {
+            std::cerr << "warning: unable to send ping payload (buffer too big)" << std::endl;
+            return std::unexpected(IcmpResponse::invalid);
+        }
+
+        return {};
     }
 
     void send_worker(std::chrono::milliseconds frequency)
@@ -213,55 +220,57 @@ namespace ping {
 
         do
         {
-            try {
+            for (const auto& [k, target] : targets )
+            {
+                const auto now = std::chrono::system_clock::now();
 
-                for (const auto& [k, target] : targets )
+                // only we write to last_sent, so there is no race here
+                uint16_t last_sent = target->last_sent_seq.load(std::memory_order_relaxed);
+                uint16_t last_received = target->last_received_seq.load(std::memory_order_relaxed);
+
+                // Check if we're waiting for a response
+                bool waiting_for_response = (last_sent != last_received);
+
+                if (waiting_for_response)
                 {
-                    const auto now = std::chrono::system_clock::now();
+                    // Check if the outstanding ping has timed out
+                    timestamp last_sent_time = target->last_sent_time.load(std::memory_order_relaxed);
+                    auto elapsed = duration_cast<milliseconds>(now - last_sent_time);
 
-                    // only we write to last_sent, so there is no race here
-                    uint16_t last_sent = target->last_sent_seq.load(std::memory_order_relaxed);
-                    uint16_t last_received = target->last_received_seq.load(std::memory_order_relaxed);
+                    // Still waiting, skip this target
+                    if (elapsed < timeout_threshold)
+                        continue;
 
-                    // Check if we're waiting for a response
-                    bool waiting_for_response = (last_sent != last_received);
-
-                    if (waiting_for_response)
-                    {
-                        // Check if the outstanding ping has timed out
-                        timestamp last_sent_time = target->last_sent_time.load(std::memory_order_relaxed);
-                        auto elapsed = duration_cast<milliseconds>(now - last_sent_time);
-
-                        // Still waiting, skip this target
-                        if (elapsed < timeout_threshold)
-                            continue;
-
-                        target->reachable.store(false);
-                        //target->latency.store(ping::TIMEOUT_LATENCY, std::memory_order_release);
-                    }
-
-                    // Send new ping
-                    uint16_t new_seq = last_sent + 1;
-
-                    packet.header.un.echo.sequence = new_seq;
-                    packet.header.checksum = 0;
-                    packet.header.checksum = calculate_checksum(&packet, sizeof(packet));
-
-                    // Update state before sending
-                    target->last_sent_time.store(now, std::memory_order_relaxed);
-                    target->last_sent_seq.store(new_seq, std::memory_order_release);
-
-                    send_ping(socket.sock_fd, packet, target->addr);
+                    target->reachable.store(false);
+                    //target->latency.store(ping::TIMEOUT_LATENCY, std::memory_order_release);
                 }
 
-                std::this_thread::sleep_for(frequency);
+                // Send new ping
+                uint16_t new_seq = last_sent + 1;
 
-            } catch (sock_wrap::failed_connection) {
+                packet.header.un.echo.sequence = htons(new_seq);
+                packet.header.checksum = 0;
+                packet.header.checksum = calculate_checksum(&packet, sizeof(packet));
 
-                std::cerr << "reconnecting send socket" << std::endl;
-                socket.reconnect();
-                std::this_thread::sleep_for(milliseconds(1000));
+                // Update state before sending
+                target->last_sent_time.store(now, std::memory_order_relaxed);
+                target->last_sent_seq.store(new_seq, std::memory_order_release);
+
+                auto res = send_ping(socket.sock_fd, packet, target->addr);
+                if(!res && res.error() == IcmpResponse::socket_error)
+                {
+                    std::cerr << "reconnecting send socket" << std::endl;
+                    socket.reconnect();
+                    std::this_thread::sleep_for(milliseconds(100));
+                } else if(!res && res.error() == IcmpResponse::timeout)
+                {
+                    std::cerr << "send socket stalled (send buffer likely full)" << std::endl;
+                    std::this_thread::sleep_for(milliseconds(100));
+                }
             }
+
+            std::this_thread::sleep_for(frequency);
+
         } while (running.load());
     }
 
