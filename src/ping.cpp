@@ -267,7 +267,8 @@ namespace ping {
 
     // ping receiver functions
 
-    std::optional<std::tuple<in_addr_t, int16_t, timestamp>> ping_receive(int sock_fd) {
+    std::expected<std::tuple<in_addr_t, int16_t, timestamp>, IcmpResponse> ping_receive(int sock_fd) noexcept
+    {
         char recv_buffer[1500];
         struct sockaddr_in recv_addr;
         socklen_t addr_len = sizeof(recv_addr);
@@ -279,51 +280,59 @@ namespace ping {
                                (struct sockaddr*)&recv_addr,
                                &addr_len);
 
-        if (len == -1)
-            throw sock_wrap::failed_connection();
-        else if (len < 0)
+        if (len < 0) // technically, recvfrom only responds with -1
         {
+            if( errno == EAGAIN || errno == EWOULDBLOCK )
+                return std::unexpected(IcmpResponse::timeout);
+
             std::cerr << "recvfrom failed (" << errno << " " << std::strerror(errno) << ")" << std::endl;
-            return std::nullopt;
+            return std::unexpected(IcmpResponse::socket_error);
         }
 
         timestamp time = mainclock::now();
 
         // Validate minimum packet size
-        if (len < sizeof(struct iphdr) + sizeof(struct icmphdr)) {
+        if (len < sizeof(struct iphdr) + sizeof(struct icmphdr))
+        {
             std::cerr << "received invalid echo packet (too big)" << std::endl;
-            return std::nullopt;
+            return std::unexpected(IcmpResponse::invalid);
         }
 
         struct iphdr* ip_header = (struct iphdr*)recv_buffer;
         int ip_header_len = ip_header->ihl * 4;
 
+        if (ip_header->protocol != IPPROTO_ICMP)
+            return std::unexpected(IcmpResponse::ignore);
+
         // Validate IP header length
         if (ip_header_len < sizeof(struct iphdr) ||
-            ip_header_len > len - sizeof(struct icmphdr)) {
+            ip_header_len > len - sizeof(struct icmphdr))
+        {
             std::cerr << "received invalid echo packet (invalid IP header length)" << std::endl;
-            return std::nullopt;
+            return std::unexpected(IcmpResponse::invalid);
         }
 
         struct icmphdr* icmp_reply = (struct icmphdr*)(recv_buffer + ip_header_len);
 
-        if (icmp_reply->un.echo.id != (getpid() & 0xFFFF))
-            return std::nullopt;
+        if (icmp_reply->un.echo.id != (getpid() & 0xFFFF)) // not ours
+            return std::unexpected(IcmpResponse::ignore);
 
+        if (icmp_reply->type == ICMP_ECHOREPLY)
+            return std::make_tuple(recv_addr.sin_addr.s_addr, ntohs(icmp_reply->un.echo.sequence), time);
         // Check for ICMP Destination Unreachable
-        if (icmp_reply->type == ICMP_DEST_UNREACH)
+        else if (icmp_reply->type == ICMP_DEST_UNREACH)
         {
             // The ICMP error message contains the original IP header + first 8 bytes of original packet
             struct iphdr* orig_ip = (struct iphdr*)(recv_buffer + ip_header_len + sizeof(struct icmphdr));
             struct icmphdr* orig_icmp = (struct icmphdr*)((char*)orig_ip + (orig_ip->ihl * 4));
 
             in_addr_t target_addr = orig_ip->daddr;  // The destination we were trying to reach
-            uint16_t sequence = orig_icmp->un.echo.sequence;
+            uint16_t sequence = ntohs(orig_icmp->un.echo.sequence);
 
             auto target_it = targets.find(target_addr);
 
             if (target_it == targets.end()) // not a ping we are sending out, simply ignore
-                return std::nullopt;
+                return std::unexpected(IcmpResponse::ignore);
 
             const char* error_msg = "";
             switch(icmp_reply->code)
@@ -337,32 +346,21 @@ namespace ping {
                 default:                 error_msg = "Destination unreachable"; break;
             }
 
-            std::cerr << "ICMP error for " << target_it->second->host
-                     << " (seq " << sequence << "): " << error_msg << std::endl;
+            std::cerr << "ICMP error for " << target_it->second->host << ": " << error_msg << std::endl;
 
             // Mark this ping as failed with special latency value
             uint16_t expected_seq = target_it->second->last_sent_seq.load(std::memory_order_acquire);
             if (expected_seq == sequence)
             {
                 target_it->second->last_received_seq.store(sequence, std::memory_order_release);
-                //target_it->second->latency.store(UNREACHABLE_LATENCY, std::memory_order_release);
                 target_it->second->reachable.store(false);
 
             }
 
-            return std::nullopt;
+            return std::unexpected(IcmpResponse::unreachable);
         }
-        else if (icmp_reply->type == ICMP_ECHOREPLY)
-            return std::make_tuple(recv_addr.sin_addr.s_addr, icmp_reply->un.echo.sequence, time);
-        else
-        {
-            //auto target_it = targets.find(recv_addr.sin_addr.s_addr);
-            //if (target_it != targets.end())
-            //    std::cerr << "ignoring non-icmp echo reply (" << target_it->second->host << ")" << std::endl;
-            //else
-            //    std::cerr << "ignoring non-icmp echo reply (unknown: " << inet_ntoa(recv_addr.sin_addr) << ")" << std::endl;
-            return std::nullopt;
-        }
+
+        return std::unexpected(IcmpResponse::ignore);
     }
 
     void receive_worker(milliseconds timeout)
