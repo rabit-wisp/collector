@@ -221,8 +221,8 @@ namespace ping {
         {
             for (const auto& [k, target] : targets )
             {
-                const auto now = std::chrono::system_clock::now();
                 const std::lock_guard<std::mutex> lock(target->lock);
+                const auto now = mainclock::now();
 
                 // only we write to last_sent, so there is no race here
                 uint16_t last_sent = target->last_sent_seq;
