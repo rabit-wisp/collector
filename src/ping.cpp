@@ -239,6 +239,7 @@ namespace ping {
                         continue;
 
                     target->last_sent_seq = 0;
+                    target->last_received_seq = 0;
                     target->latency.store(-1);
                 }
 
