@@ -79,8 +79,7 @@ namespace ping {
 
             sock_fd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
             if (sock_fd < 0) {
-                throw std::runtime_error(fmt::format("failed to create socket ({}: {}).",
-                                                     errno, std::strerror(errno)));
+                throw std::runtime_error(fmt::format("failed to create socket ({}: {}).", errno, std::strerror(errno)));
             }
 
             // Set socket timeout to the ping frequency to essentially stop waiting for a ping reply
@@ -377,39 +376,34 @@ namespace ping {
         sock_wrap socket(timeout);
         while(running.load())
         {
-            try {
-                auto res = ping_receive(socket.sock_fd);
+            auto res = ping_receive(socket.sock_fd);
 
-                if(res) // if res is set, then it exists in targets
+            if(res) // if res is set, then it exists in targets
+            {
+                auto [addr, sequence, received] = *res;
+                auto& target = targets[addr];
+
+                // Check if this is the sequence we're waiting for
+                uint16_t expected_seq = target->last_sent_seq.load(std::memory_order_acquire);
+
+                if(expected_seq == sequence)
                 {
-                    auto [addr, sequence, received] = *res;
-                    auto& target = targets[addr];
+                    // Calculate latency
+                    const timestamp sent_time = target->last_sent_time.load(std::memory_order_relaxed);
+                    const int16_t latency = duration_cast<microseconds>(received - sent_time).count() / 100;
 
-                    // Check if this is the sequence we're waiting for
-                    uint16_t expected_seq = target->last_sent_seq.load(std::memory_order_acquire);
-
-                    if(expected_seq == sequence)
-                    {
-                        // Calculate latency
-                        const timestamp sent_time = target->last_sent_time.load(std::memory_order_relaxed);
-                        const int16_t latency = duration_cast<microseconds>(received - sent_time).count() / 100;
-
-                        target->last_received_seq.store(sequence, std::memory_order_release);
-                        target->latency.store(latency, std::memory_order_relaxed);
-                        target->reachable.store(true);
-                    }
-                    // else -> ignore this as sequence is stale
+                    target->last_received_seq.store(sequence, std::memory_order_release);
+                    target->latency.store(latency, std::memory_order_relaxed);
+                    target->reachable.store(true);
                 }
-                else
-                    std::this_thread::sleep_for(milliseconds(10)); // rate limit failures
-
-            } catch (sock_wrap::failed_connection& e) {
-                std::cerr << e.what() << std::endl;
+                // else -> ignore this as sequence is stale
+            }
+            else if(res.error() == IcmpResponse::socket_error )
+            {
                 std::cerr << "reconnecting receive socket" << std::endl;
                 socket.reconnect();
-                std::this_thread::sleep_for(milliseconds(1000));
+                std::this_thread::sleep_for(milliseconds(100));
             }
-
         }
     }
 
