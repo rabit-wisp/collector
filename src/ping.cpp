@@ -5,6 +5,7 @@
 #include <fstream>
 #include <vector>
 #include <optional>
+#include <expected>
 #include <map>
 #include <mutex>
 #include <atomic>
@@ -17,7 +18,7 @@
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>
 #include <fmt/ranges.h>
-
+#include <cstdio>
 #include <sys/socket.h>
 #include <netinet/ip.h>
 #include <netinet/ip_icmp.h>
@@ -29,6 +30,15 @@
 using namespace std::chrono;
 
 namespace ping {
+
+    enum class IcmpResponse {
+        ignore,      // otherwise valid ICMP packet that simply isn't our or is stale
+        invalid,     // invalid payload (too small, too big, can't be safely interpreted)
+        unreachable, // OS told us the target is unreachable
+        timeout,     // the socket timed out
+        socket_error // the socket failed
+    };
+
 
     // forward declarations
     struct Target;
@@ -62,15 +72,14 @@ namespace ping {
         }
 
 
-        void reconnect() {
-
+        std::expected<void, int> reconnect() noexcept
+        {
             if(sock_fd >= 0)
                 close(sock_fd);
 
             sock_fd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
             if (sock_fd < 0) {
-                throw std::runtime_error(fmt::format("failed to create socket ({}: {}).",
-                                                     errno, std::strerror(errno)));
+                return std::unexpected(errno);
             }
 
             // Set socket timeout to the ping frequency to essentially stop waiting for a ping reply
@@ -79,37 +88,25 @@ namespace ping {
             timeout_.tv_sec = int(timeout.count() / 1000);
             timeout_.tv_usec = (timeout.count() % 1000) * 1000;
             setsockopt(sock_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout_, sizeof(timeout_));
+
+            return {};
         }
-
-        struct failed_connection : std::exception {
-            std::string msg;
-            failed_connection() {
-                msg = fmt::format("recvfrom failed ({} {})", errno, std::strerror(errno));
-            }
-
-            const char* what() const noexcept override { return msg.c_str(); };
-        };
     };
 
     struct Target {
         std::string host;
-        std::atomic<uint16_t> last_sent_seq;
-        std::atomic<uint16_t> last_received_seq;
-        std::atomic<timestamp> last_sent_time;
+        std::mutex lock;
+        uint16_t last_sent_seq;
+        uint16_t last_received_seq;
+        timestamp last_sent_time;
         std::atomic<int16_t> latency; // we could go milliseconds_d, but we're really looking for single digit precision only
-        std::atomic<bool> reachable;
 
         struct sockaddr_in addr;
 
-        Target(const std::string& host) : host(host),
-                                          last_sent_seq(0),
-                                          last_received_seq(0),
-                                          reachable(false)
+        Target(const std::string& host, const std::string& resolved) : host(host),
+                                                                       last_sent_seq(0),
+                                                                       last_received_seq(0)
         {
-            auto resolved = resolve_hostname(host);
-            if (resolved.empty())
-                throw std::runtime_error(fmt::format("Can't resolve hostname '{}'", host));
-
             memset(&addr, 0, sizeof(addr));
             addr.sin_family = AF_INET;
             inet_pton(AF_INET, resolved.c_str(), &addr.sin_addr);
@@ -117,10 +114,11 @@ namespace ping {
 
         std::string dump_json()
         {
-            if(reachable.load())
-                return fmt::format("{:.1f}", float(latency.load()) / 10.0f);
-            else
+            const auto l = latency.load();
+            if (l < 0)
                 return "null";
+            else
+                return fmt::format("{:.1f}", float(l) / 10.0f);
         }
     };
 
@@ -164,7 +162,7 @@ namespace ping {
 
     // ping sending functions
 
-    void send_ping(int sock_fd, struct ICMPPacket& packet, struct sockaddr_in& dest_addr)
+    std::expected<void, IcmpResponse> send_ping(int sock_fd, struct ICMPPacket& packet, struct sockaddr_in& dest_addr) noexcept
     {
         ssize_t len = sendto(sock_fd,
                              &packet,
@@ -173,15 +171,22 @@ namespace ping {
                              (struct sockaddr*)&dest_addr,
                              sizeof(dest_addr));
 
-        if (len == -1)
-            throw sock_wrap::failed_connection();
-        else if (len < 0)
+        if (len < 0)
         {
+            if( errno == EAGAIN || errno == EWOULDBLOCK )
+                return std::unexpected(IcmpResponse::timeout);
+
             std::cerr << "unable to send ping payload (err " << errno
                       << " - " << std::strerror(errno) << ")" << std::endl;
+            return std::unexpected(IcmpResponse::socket_error);
         }
         else if (len < sizeof(packet))
-            std::cerr << "unable to send ping payload (buffer too big)" << std::endl;
+        {
+            std::cerr << "warning: unable to send ping payload (buffer too big)" << std::endl;
+            return std::unexpected(IcmpResponse::invalid);
+        }
+
+        return {};
     }
 
     void send_worker(std::chrono::milliseconds frequency)
@@ -207,61 +212,69 @@ namespace ping {
 
         do
         {
-            try {
+            for (const auto& [k, target] : targets )
+            {
+                const std::lock_guard<std::mutex> lock(target->lock);
+                const auto now = mainclock::now();
 
-                for (const auto& [k, target] : targets )
+                // only we write to last_sent, so there is no race here
+                uint16_t last_sent = target->last_sent_seq;
+                uint16_t last_received = target->last_received_seq;
+
+                // Check if we're waiting for a response
+                if (last_sent != last_received)
                 {
-                    const auto now = std::chrono::system_clock::now();
+                    // Check if the outstanding ping has timed out
+                    auto elapsed = duration_cast<milliseconds>(now - target->last_sent_time);
 
-                    // only we write to last_sent, so there is no race here
-                    uint16_t last_sent = target->last_sent_seq.load(std::memory_order_relaxed);
-                    uint16_t last_received = target->last_received_seq.load(std::memory_order_relaxed);
+                    // Still waiting, skip this target
+                    if (elapsed < timeout_threshold)
+                        continue;
 
-                    // Check if we're waiting for a response
-                    bool waiting_for_response = (last_sent != last_received);
-
-                    if (waiting_for_response)
-                    {
-                        // Check if the outstanding ping has timed out
-                        timestamp last_sent_time = target->last_sent_time.load(std::memory_order_relaxed);
-                        auto elapsed = duration_cast<milliseconds>(now - last_sent_time);
-
-                        // Still waiting, skip this target
-                        if (elapsed < timeout_threshold)
-                            continue;
-
-                        target->reachable.store(false);
-                        //target->latency.store(ping::TIMEOUT_LATENCY, std::memory_order_release);
-                    }
-
-                    // Send new ping
-                    uint16_t new_seq = last_sent + 1;
-
-                    packet.header.un.echo.sequence = new_seq;
-                    packet.header.checksum = 0;
-                    packet.header.checksum = calculate_checksum(&packet, sizeof(packet));
-
-                    // Update state before sending
-                    target->last_sent_time.store(now, std::memory_order_relaxed);
-                    target->last_sent_seq.store(new_seq, std::memory_order_release);
-
-                    send_ping(socket.sock_fd, packet, target->addr);
+                    target->last_sent_seq = 0;
+                    target->last_received_seq = 0;
+                    target->latency.store(-1);
                 }
 
-                std::this_thread::sleep_for(frequency);
+                // Send new ping
+                uint16_t new_seq = target->last_sent_seq + 1;
 
-            } catch (sock_wrap::failed_connection) {
+                packet.header.un.echo.sequence = htons(new_seq);
+                packet.header.checksum = 0;
+                packet.header.checksum = calculate_checksum(&packet, sizeof(packet));
 
-                std::cerr << "reconnecting send socket" << std::endl;
-                socket.reconnect();
-                std::this_thread::sleep_for(milliseconds(1000));
+                // Update state before sending
+                target->last_sent_time = now;
+                target->last_sent_seq  = new_seq;
+
+                auto res = send_ping(socket.sock_fd, packet, target->addr);
+                if(!res && res.error() == IcmpResponse::socket_error)
+                {
+                    std::cerr << "reconnecting send socket" << std::endl;
+                    std::expected<void, int> res;
+                    while( !res ) {
+                        res = socket.reconnect();
+                        fmt::print(stderr, "failed to create socket ({}: {}). retrying...\n", errno, std::strerror(errno));
+                        std::this_thread::sleep_for(milliseconds(100));
+                    }
+
+                } else if(!res && res.error() == IcmpResponse::timeout) {
+
+                    std::cerr << "send socket stalled (send buffer likely full)" << std::endl;
+                    std::this_thread::sleep_for(milliseconds(100));
+                }
             }
+
+            std::this_thread::sleep_for(frequency);
+
         } while (running.load());
     }
 
     // ping receiver functions
 
-    std::optional<std::tuple<in_addr_t, int16_t, timestamp>> ping_receive(int sock_fd) {
+    std::expected<std::tuple<in_addr_t, int16_t, timestamp>, IcmpResponse> ping_receive(int sock_fd) noexcept
+    {
+        static int16_t pid = getpid() & 0xFFFF;
         char recv_buffer[1500];
         struct sockaddr_in recv_addr;
         socklen_t addr_len = sizeof(recv_addr);
@@ -273,51 +286,59 @@ namespace ping {
                                (struct sockaddr*)&recv_addr,
                                &addr_len);
 
-        if (len == -1)
-            throw sock_wrap::failed_connection();
-        else if (len < 0)
+        if (len < 0) // technically, recvfrom only responds with -1
         {
+            if( errno == EAGAIN || errno == EWOULDBLOCK )
+                return std::unexpected(IcmpResponse::timeout);
+
             std::cerr << "recvfrom failed (" << errno << " " << std::strerror(errno) << ")" << std::endl;
-            return std::nullopt;
+            return std::unexpected(IcmpResponse::socket_error);
         }
 
         timestamp time = mainclock::now();
 
         // Validate minimum packet size
-        if (len < sizeof(struct iphdr) + sizeof(struct icmphdr)) {
+        if (len < sizeof(struct iphdr) + sizeof(struct icmphdr))
+        {
             std::cerr << "received invalid echo packet (too big)" << std::endl;
-            return std::nullopt;
+            return std::unexpected(IcmpResponse::invalid);
         }
 
         struct iphdr* ip_header = (struct iphdr*)recv_buffer;
         int ip_header_len = ip_header->ihl * 4;
 
+        if (ip_header->protocol != IPPROTO_ICMP)
+            return std::unexpected(IcmpResponse::ignore);
+
         // Validate IP header length
         if (ip_header_len < sizeof(struct iphdr) ||
-            ip_header_len > len - sizeof(struct icmphdr)) {
+            ip_header_len > len - sizeof(struct icmphdr))
+        {
             std::cerr << "received invalid echo packet (invalid IP header length)" << std::endl;
-            return std::nullopt;
+            return std::unexpected(IcmpResponse::invalid);
         }
 
         struct icmphdr* icmp_reply = (struct icmphdr*)(recv_buffer + ip_header_len);
 
-        if (icmp_reply->un.echo.id != (getpid() & 0xFFFF))
-            return std::nullopt;
+        if (icmp_reply->un.echo.id != pid) // not ours
+            return std::unexpected(IcmpResponse::ignore);
 
+        if (icmp_reply->type == ICMP_ECHOREPLY)
+            return std::make_tuple(recv_addr.sin_addr.s_addr, ntohs(icmp_reply->un.echo.sequence), time);
         // Check for ICMP Destination Unreachable
-        if (icmp_reply->type == ICMP_DEST_UNREACH)
+        else if (icmp_reply->type == ICMP_DEST_UNREACH)
         {
             // The ICMP error message contains the original IP header + first 8 bytes of original packet
             struct iphdr* orig_ip = (struct iphdr*)(recv_buffer + ip_header_len + sizeof(struct icmphdr));
             struct icmphdr* orig_icmp = (struct icmphdr*)((char*)orig_ip + (orig_ip->ihl * 4));
 
             in_addr_t target_addr = orig_ip->daddr;  // The destination we were trying to reach
-            uint16_t sequence = orig_icmp->un.echo.sequence;
+            uint16_t sequence = ntohs(orig_icmp->un.echo.sequence);
 
             auto target_it = targets.find(target_addr);
 
             if (target_it == targets.end()) // not a ping we are sending out, simply ignore
-                return std::nullopt;
+                return std::unexpected(IcmpResponse::ignore);
 
             const char* error_msg = "";
             switch(icmp_reply->code)
@@ -331,32 +352,25 @@ namespace ping {
                 default:                 error_msg = "Destination unreachable"; break;
             }
 
-            std::cerr << "ICMP error for " << target_it->second->host
-                     << " (seq " << sequence << "): " << error_msg << std::endl;
+            std::cerr << "ICMP error for " << target_it->second->host << ": " << error_msg << std::endl;
 
-            // Mark this ping as failed with special latency value
-            uint16_t expected_seq = target_it->second->last_sent_seq.load(std::memory_order_acquire);
-            if (expected_seq == sequence)
             {
-                target_it->second->last_received_seq.store(sequence, std::memory_order_release);
-                //target_it->second->latency.store(UNREACHABLE_LATENCY, std::memory_order_release);
-                target_it->second->reachable.store(false);
+                const std::lock_guard<std::mutex> lock(target_it->second->lock);
 
+                // Mark this ping as failed with special latency value
+                if (target_it->second->last_sent_seq == sequence)
+                {
+                    // reset the sequence counter
+                    target_it->second->last_sent_seq = 0;
+                    target_it->second->last_received_seq = 0;
+                    target_it->second->latency.store(-1);
+                }
             }
 
-            return std::nullopt;
+            return std::unexpected(IcmpResponse::unreachable);
         }
-        else if (icmp_reply->type == ICMP_ECHOREPLY)
-            return std::make_tuple(recv_addr.sin_addr.s_addr, icmp_reply->un.echo.sequence, time);
-        else
-        {
-            //auto target_it = targets.find(recv_addr.sin_addr.s_addr);
-            //if (target_it != targets.end())
-            //    std::cerr << "ignoring non-icmp echo reply (" << target_it->second->host << ")" << std::endl;
-            //else
-            //    std::cerr << "ignoring non-icmp echo reply (unknown: " << inet_ntoa(recv_addr.sin_addr) << ")" << std::endl;
-            return std::nullopt;
-        }
+
+        return std::unexpected(IcmpResponse::ignore);
     }
 
     void receive_worker(milliseconds timeout)
@@ -364,39 +378,36 @@ namespace ping {
         sock_wrap socket(timeout);
         while(running.load())
         {
-            try {
-                auto res = ping_receive(socket.sock_fd);
+            auto res = ping_receive(socket.sock_fd);
 
-                if(res) // if res is set, then it exists in targets
+            if(res) // if res is set, then it exists in targets
+            {
+                auto [addr, sequence, received] = *res;
+                const auto& target = targets.find(addr)->second; // we know this will succeed because ping_receive() does it internally
+
+                const std::lock_guard<std::mutex> lock(target->lock);
+
+                // Check if this is the sequence we're waiting for
+                if(target->last_sent_seq == sequence)
                 {
-                    auto [addr, sequence, received] = *res;
-                    auto& target = targets[addr];
+                    // Calculate latency
+                    const int16_t latency = duration_cast<microseconds>(received - target->last_sent_time).count() / 100;
 
-                    // Check if this is the sequence we're waiting for
-                    uint16_t expected_seq = target->last_sent_seq.load(std::memory_order_acquire);
-
-                    if(expected_seq == sequence)
-                    {
-                        // Calculate latency
-                        const timestamp sent_time = target->last_sent_time.load(std::memory_order_relaxed);
-                        const int16_t latency = duration_cast<microseconds>(received - sent_time).count() / 100;
-
-                        target->last_received_seq.store(sequence, std::memory_order_release);
-                        target->latency.store(latency, std::memory_order_relaxed);
-                        target->reachable.store(true);
-                    }
-                    // else -> ignore this as sequence is stale
+                    target->last_received_seq = sequence;
+                    target->latency.store(latency);
                 }
-                else
-                    std::this_thread::sleep_for(milliseconds(10)); // rate limit failures
-
-            } catch (sock_wrap::failed_connection& e) {
-                std::cerr << e.what() << std::endl;
-                std::cerr << "reconnecting receive socket" << std::endl;
-                socket.reconnect();
-                std::this_thread::sleep_for(milliseconds(1000));
+                // else -> ignore this as sequence is stale
             }
-
+            else if(res.error() == IcmpResponse::socket_error )
+            {
+                std::cerr << "reconnecting receive socket" << std::endl;
+                std::expected<void, int> res;
+                while( !res ) {
+                    res = socket.reconnect();
+                    fmt::print(stderr, "failed to create socket ({}: {}). retrying...\n", errno, std::strerror(errno));
+                    std::this_thread::sleep_for(milliseconds(100));
+                }
+            }
         }
     }
 
@@ -420,14 +431,14 @@ namespace ping {
 
         for(auto& host : hosts)
         {
-            try {
-                auto target = std::make_unique<Target>(host);
-                targets.insert({target->addr.sin_addr.s_addr, std::move(target)});
-
-            } catch (std::exception& e) {
-                std::cerr << "unable to run ping on '" << host
-                          << "' - error: " << e.what() << std::endl;
+            auto resolved = resolve_hostname(host);
+            if (resolved.empty())
+            {
+                fmt::print("Can't resolve hostname '{}' - ignoring", host);
+                continue;
             }
+            auto target = std::make_unique<Target>(host, resolved);
+            targets.insert({target->addr.sin_addr.s_addr, std::move(target)});
         }
 
         recv_thread = std::move(std::thread(receive_worker, frequency * 3));
