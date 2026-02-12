@@ -18,7 +18,7 @@
 #define FMT_HEADER_ONLY
 #include <fmt/format.h>
 #include <fmt/ranges.h>
-
+#include <cstdio>
 #include <sys/socket.h>
 #include <netinet/ip.h>
 #include <netinet/ip_icmp.h>
@@ -72,14 +72,14 @@ namespace ping {
         }
 
 
-        void reconnect() {
-
+        std::expected<void, int> reconnect() noexcept
+        {
             if(sock_fd >= 0)
                 close(sock_fd);
 
             sock_fd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
             if (sock_fd < 0) {
-                throw std::runtime_error(fmt::format("failed to create socket ({}: {}).", errno, std::strerror(errno)));
+                return std::unexpected(errno);
             }
 
             // Set socket timeout to the ping frequency to essentially stop waiting for a ping reply
@@ -88,16 +88,9 @@ namespace ping {
             timeout_.tv_sec = int(timeout.count() / 1000);
             timeout_.tv_usec = (timeout.count() % 1000) * 1000;
             setsockopt(sock_fd, SOL_SOCKET, SO_RCVTIMEO, &timeout_, sizeof(timeout_));
+
+            return {};
         }
-
-        struct failed_connection : std::exception {
-            std::string msg;
-            failed_connection() {
-                msg = fmt::format("recvfrom failed ({} {})", errno, std::strerror(errno));
-            }
-
-            const char* what() const noexcept override { return msg.c_str(); };
-        };
     };
 
     struct Target {
@@ -258,8 +251,12 @@ namespace ping {
                 if(!res && res.error() == IcmpResponse::socket_error)
                 {
                     std::cerr << "reconnecting send socket" << std::endl;
-                    socket.reconnect();
-                    std::this_thread::sleep_for(milliseconds(100));
+                    std::expected<void, int> res;
+                    while( !res ) {
+                        res = socket.reconnect();
+                        fmt::print(stderr, "failed to create socket ({}: {}). retrying...\n", errno, std::strerror(errno));
+                        std::this_thread::sleep_for(milliseconds(100));
+                    }
 
                 } else if(!res && res.error() == IcmpResponse::timeout) {
 
@@ -404,8 +401,12 @@ namespace ping {
             else if(res.error() == IcmpResponse::socket_error )
             {
                 std::cerr << "reconnecting receive socket" << std::endl;
-                socket.reconnect();
-                std::this_thread::sleep_for(milliseconds(100));
+                std::expected<void, int> res;
+                while( !res ) {
+                    res = socket.reconnect();
+                    fmt::print(stderr, "failed to create socket ({}: {}). retrying...\n", errno, std::strerror(errno));
+                    std::this_thread::sleep_for(milliseconds(100));
+                }
             }
         }
     }
